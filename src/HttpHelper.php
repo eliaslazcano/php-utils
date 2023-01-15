@@ -2,7 +2,6 @@
 /**
  * Oferece ferramentas para manipular facilmente a requisicao HTTP.
  * @author Elias Lazcano Castro Neto
- * @version 2023-01-10
  * @since 5.3
  */
 
