@@ -1,0 +1,17 @@
+{
+    "name": "eliaslazcano/helpers",
+    "description": "Biblioteca de helpers para simplificar comandos rotineiros do PHP",
+    "autoload": {
+        "psr-4": {
+            "Eliaslazcano\\Helpers\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Elias Lazcano Castro Neto",
+            "email": "elias304162@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
