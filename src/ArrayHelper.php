@@ -4,6 +4,7 @@
  * @author Elias Lazcano Castro Neto
  * @since 5.3
  */
+namespace Eliaslazcano\Helpers;
 
 class ArrayHelper
 {
