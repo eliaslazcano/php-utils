@@ -22,15 +22,7 @@ class JwtHelper
   public function __construct($payload = null, $secret = null)
   {
     $this->payload = ($payload ?: array());
-    $this->secret = $secret;
-  }
-
-  /**
-   * @return array|mixed
-   */
-  public function getPayload()
-  {
-    return $this->payload;
+    $this->secret = ($secret ?: self::randomSecret());
   }
 
   /**
@@ -44,14 +36,6 @@ class JwtHelper
   }
 
   /**
-   * @return string|null
-   */
-  public function getSecret()
-  {
-    return $this->secret;
-  }
-
-  /**
    * @param string|null $secret
    * @return JwtHelper
    */
@@ -59,6 +43,15 @@ class JwtHelper
   {
     $this->secret = $secret;
     return $this;
+  }
+
+  /**
+   * Obtem a chave secreta
+   * @return string|null
+   */
+  public function getSecret()
+  {
+    return $this->secret;
   }
 
   /**
@@ -89,7 +82,7 @@ class JwtHelper
    */
   public static function tokenCreate($payload = array(), $secret = null)
   {
-    $key = $secret ?: md5(uniqid(mt_rand().mt_rand(), true), false);
+    $key = $secret ?: self::randomSecret();
 
     $header = [
       'alg' => 'HS256', //algoritmo de criptografia
@@ -139,6 +132,15 @@ class JwtHelper
     $payload = $part[1];
     $payload = base64_decode($payload);
     return json_decode($payload, $associative);
+  }
+
+  /**
+   * Gera uma chave aleatoria.
+   * @return string
+   */
+  private static function randomSecret()
+  {
+    return md5(uniqid(mt_rand().mt_rand(), true), false);
   }
 
 }
