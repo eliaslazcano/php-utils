@@ -688,11 +688,19 @@ class HttpHelper
   /**
    * Expoe um outro diretorio para atuar como diretorio primario onde as paginas PHP serao expostas ao cliente.
    * @param string $mainDir Caminho do diretorio raiz dos arquivos que sera expostos. Recomendo usar realpath().
+   * @param string|null $logFile Nome do arquivo de log para registrar erros, coloque o caminho completo e nome do arquivo desejado. Recomendo usar realpath().
    * @param string $noRouteMessage Mensagem quando a URL nao corresponde a nenhuma pagina. Retornada em JSON e HTTP 404.
    * @return void
    */
-  public static function useRouter($mainDir, $noRouteMessage = 'Nenhum webservice corresponde a solicitacao')
+  public static function useRouter($mainDir, $logFile = null, $noRouteMessage = 'Nenhum webservice corresponde a solicitacao')
   {
+    if ($logFile) {
+      ini_set('log_errors', 1);
+      ini_set('error_log', $logFile);
+      ini_set('display_errors', 0);
+      error_reporting(E_ALL);
+    }
+
     $mensagem_notfound = 'Nenhum webservice corresponde a solicitacao';
     $pathInfo = isset($_SERVER['PATH_INFO']);
     $origPathInfo = isset($_SERVER['ORIG_PATH_INFO']);
