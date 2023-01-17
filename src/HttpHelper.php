@@ -11,17 +11,17 @@ class HttpHelper
   /**
    * @var string|null Repostas HTTP emitidas por esta classe HttpHelper devem mencionar isso no header 'Access-Control-Allow-Origin'. Default empty.
    */
-  private static $allow_origin = null;
+  protected static $allow_origin = null;
 
   /**
    * @var string|null Repostas HTTP emitidas por esta classe HttpHelper devem mencionar isso no header 'Access-Control-Allow-Headers'. Default: 'Authorization, Content-Type, Cache-Control'.
    */
-  private static $allow_headers = 'Authorization, Content-Type, Cache-Control';
+  protected static $allow_headers = 'Authorization, Content-Type, Cache-Control';
 
   /**
    * @var bool Repostas HTTP emitidas por esta classe HttpHelper devem mencionar o header 'Access-Control-Allow-Credentials: true'. Default: false.
    */
-  private static $allow_credentials = false;
+  protected static $allow_credentials = false;
 
   /**
    * Define o que sera emitido no header 'Access-Control-Allow-Origin' caso esta classe HttpHelper emita uma resposta.
@@ -241,7 +241,7 @@ class HttpHelper
   }
 
   /**
-   * Confere se a requisicao eh do metodo HTTP GET, caso contrário mata o script e responde HTTP 405.
+   * Confere se a requisicao eh do metodo HTTP GET, caso contrario mata o script e responde HTTP 405.
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
    * @param string $allowOrigin Origens aceitas, separadas por virgula.
@@ -251,8 +251,8 @@ class HttpHelper
   public static function validarGet($emitirErro = true, $allowOrigin = null, $allowHeaders = null)
   {
     header('Access-Control-Allow-Methods: GET, OPTIONS');
-    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . $allowOrigin ?: self::$allow_origin);
-    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . $allowHeaders ?: self::$allow_headers);
+    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . ($allowOrigin ?: self::$allow_origin));
+    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . ($allowHeaders ?: self::$allow_headers));
     if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
 
     $method = $_SERVER['REQUEST_METHOD'];
@@ -267,7 +267,7 @@ class HttpHelper
   }
 
   /**
-   * Confere se a requisicao eh do metodo HTTP POST, caso contrário mata o script e responde HTTP 405.
+   * Confere se a requisicao eh do metodo HTTP POST, caso contrario mata o script e responde HTTP 405.
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
    * @param string $allowOrigin Origens aceitas, separadas por virgula.
@@ -277,8 +277,8 @@ class HttpHelper
   public static function validarPost($emitirErro = true, $allowOrigin = null, $allowHeaders = null)
   {
     header('Access-Control-Allow-Methods: POST, OPTIONS');
-    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . $allowOrigin ?: self::$allow_origin);
-    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . $allowHeaders ?: self::$allow_headers);
+    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . ($allowOrigin ?: self::$allow_origin));
+    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . ($allowHeaders ?: self::$allow_headers));
     if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
 
     $method = $_SERVER['REQUEST_METHOD'];
@@ -293,7 +293,7 @@ class HttpHelper
   }
 
   /**
-   * Confere se a requisicao eh do metodo HTTP especificado, caso contrário mata o script e responde HTTP 405.
+   * Confere se a requisicao eh do metodo HTTP especificado, caso contrario mata o script e responde HTTP 405.
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param string $metodo Metodo HTTP. Ex: 'GET','POST','PUT','DELETE'.
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
@@ -304,8 +304,8 @@ class HttpHelper
   public static function validarMetodo($metodo, $emitirErro = true, $allowOrigin = null, $allowHeaders = null)
   {
     header("Access-Control-Allow-Methods: $metodo, OPTIONS");
-    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . $allowOrigin ?: self::$allow_origin);
-    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . $allowHeaders ?: self::$allow_headers);
+    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . ($allowOrigin ?: self::$allow_origin));
+    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . ($allowHeaders ?: self::$allow_headers));
     if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
 
     $method = $_SERVER['REQUEST_METHOD'];
@@ -320,7 +320,7 @@ class HttpHelper
   }
 
   /**
-   * Confere se a requisicao eh um dos metodos HTTP especificados, caso contrário mata o script e responde HTTP 405.
+   * Confere se a requisicao eh um dos metodos HTTP especificados, caso contrario mata o script e responde HTTP 405.
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param string $metodos Metodos HTTP. Ex: ['GET','POST','PUT','DELETE'].
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
@@ -339,8 +339,8 @@ class HttpHelper
     $metodosString = count($metodos) > 1 ? implode(", ", $metodos) : $metodos[0]; //Une em string separado por virgula.
 
     header("Access-Control-Allow-Methods: $metodosString, OPTIONS");
-    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . $allowOrigin ?: self::$allow_origin);
-    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . $allowHeaders ?: self::$allow_headers);
+    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . ($allowOrigin ?: self::$allow_origin));
+    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . ($allowHeaders ?: self::$allow_headers));
     if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
 
     $method = $_SERVER['REQUEST_METHOD'];
@@ -557,7 +557,7 @@ class HttpHelper
   }
 
   /**
-   * Realiza o download de um arquivo que está no armazenamento local. Esta funcao encerra o script.
+   * Realiza o download de um arquivo que esta no armazenamento local. Esta funcao encerra o script.
    * @param string $filePath
    * @param string $contentType
    * @param string|null $filename
@@ -641,8 +641,8 @@ class HttpHelper
   }
 
   /**
-   * Realiza uma requisição POST.
-   * @param string $url Endpoint da requisição.
+   * Realiza uma requisicao POST.
+   * @param string $url Endpoint da requisicao.
    * @param array|string|null $data Para formdata use array associativo com chave => valor. Para JSON use uma string.
    * @param array $headers Um array com headers HTTP a definir, no formato array('Content-type: text/plain', 'Content-length: 100').
    * @return array|false False em caso de erro. Array com colunas 'code','type','size','body','json'. Body em JSON ja eh entregue adaptado.
@@ -683,5 +683,31 @@ class HttpHelper
     $file = fopen(rtrim($diretorio, '/') . '/' . $arquivo, 'a');
     fwrite($file, $texto . PHP_EOL);
     fclose($file);
+  }
+
+  /**
+   * Expoe um outro diretorio para atuar como diretorio primario onde as paginas PHP serao expostas ao cliente.
+   * @param string $mainDir Caminho do diretorio raiz dos arquivos que sera expostos. Recomendo usar realpath().
+   * @param string $noRouteMessage Mensagem quando a URL nao corresponde a nenhuma pagina. Retornada em JSON e HTTP 404.
+   * @return void
+   */
+  public static function useRouter($mainDir, $noRouteMessage = 'Nenhum webservice corresponde a solicitacao')
+  {
+    $mensagem_notfound = 'Nenhum webservice corresponde a solicitacao';
+    $pathInfo = isset($_SERVER['PATH_INFO']);
+    $origPathInfo = isset($_SERVER['ORIG_PATH_INFO']);
+    if ($pathInfo) $caminho = $_SERVER['PATH_INFO'];
+    elseif ($origPathInfo) $caminho = $_SERVER['ORIG_PATH_INFO'];
+    else self::erroJson(404, $noRouteMessage);
+
+    if (!empty($caminho)) $caminho = trim($caminho, '/'); #Remove a barra inicial
+
+    if (empty($caminho)) self::erroJson(404, $noRouteMessage, 2);
+    else {
+      $mainDir = rtrim($mainDir, '/');
+      if (file_exists("$mainDir/$caminho.php")) require "$mainDir/$caminho.php";
+      elseif (file_exists("$mainDir/$caminho/index.php")) require "$mainDir/$caminho/index.php";
+      else self::erroJson(404, $noRouteMessage, 3);
+    }
   }
 }
