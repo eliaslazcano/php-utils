@@ -84,10 +84,10 @@ class JwtHelper
   {
     $key = $secret ?: self::randomSecret();
 
-    $header = [
+    $header = array(
       'alg' => 'HS256', //algoritmo de criptografia
       'typ' => 'JWT'    //tipo de token
-    ];
+    );
     $header = json_encode($header);         //converte em string JSON
     $header = base64_encode($header);       //codifica em texto BASE64
 
@@ -98,7 +98,7 @@ class JwtHelper
     $signature = base64_encode($signature); //codifica em texto BASE64
 
     $token = "$header.$payload.$signature";
-    return ['secret' => $key, 'token' => $token];
+    return array('secret' => $key, 'token' => $token);
   }
 
   /**
