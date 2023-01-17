@@ -10,12 +10,12 @@ namespace Eliaslazcano\Helpers;
 class JwtHelper
 {
   /**
-   * Cria um token e retorna ele. Voce pode fornecer o secret ou deixar a funcao gerar um para voce.
-   * @param string|null $secret Um string secreta de sua escolha para futuramente validar a autenticidade do token. Se nao informado, sera gerada aleatoriamente.
+   * Cria um token. Voce pode fornecer o secret ou deixar a funcao gerar um para voce.
    * @param array|object $payload Dados guardados no token. Evite dados sigilosos como senhas.
-   * @return array|string Se forneceu um secret o retorno sera a string do JWT. Se nao forneceu um secret entao o retorno sera array associativo com indices 'token' e 'secret'.
+   * @param string|null $secret Um string secreta de sua escolha para futuramente validar a autenticidade do token. Se nao informado, sera gerada aleatoriamente.
+   * @return array Array no formato: ['secret' => string, 'token' => string].
    */
-  public static function tokenCreate($secret = null, $payload = [])
+  public static function tokenCreate($payload = [], $secret = null)
   {
     $key = $secret ?: md5(uniqid(mt_rand().mt_rand(), true), false);
 
@@ -33,7 +33,7 @@ class JwtHelper
     $signature = base64_encode($signature); //codifica em texto BASE64
 
     $token = "$header.$payload.$signature";
-    return $secret ? $token : ['secret' => $key, 'token' => $token];
+    return ['secret' => $key, 'token' => $token];
   }
 
   /**
