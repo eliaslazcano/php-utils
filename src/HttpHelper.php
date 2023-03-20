@@ -6,7 +6,7 @@
  */
 namespace Eliaslazcano\Helpers;
 
-class HttpHelper
+abstract class HttpHelper
 {
   /**
    * @var string|null Repostas HTTP emitidas por esta classe HttpHelper devem mencionar isso no header 'Access-Control-Allow-Origin'. Default empty.

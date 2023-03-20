@@ -3,7 +3,7 @@
   "type": "library",
   "license": "MIT",
   "description": "Biblioteca de helpers para simplificar comandos rotineiros do PHP",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "autoload": {
     "psr-4": {
       "Eliaslazcano\\Helpers\\": "src/"
@@ -17,10 +17,12 @@
   ],
   "minimum-stability": "stable",
   "require": {
-    "php": ">=5.6",
+    "php": ">=7.0",
     "ext-gd": "*",
     "ext-curl": "*",
     "ext-json": "*",
+    "ext-mbstring": "*",
+    "ext-pdo": "*",
     "gumlet/php-image-resize": "^2.0"
   }
 }
