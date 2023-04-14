@@ -617,9 +617,10 @@ abstract class HttpHelper
    * Realiza uma requisicao GET atraves do Curl.
    * @param string $url Endpoint da requisicao.
    * @param array $headers Um array com headers HTTP a definir, no formato array('Content-type: text/plain', 'Content-length: 100').
+   * @param int $timeout Tempo limite em segundos para receber a resposta da requisicao.
    * @return array|false False em caso de erro. Array com colunas 'code','type','size','body','json'. Body em JSON ja eh entregue adaptado.
    */
-  public static function curlGet($url, $headers = array())
+  public static function curlGet($url, $headers = array(), $timeout = 30)
   {
     $curl = curl_init();
     curl_setopt_array($curl, array(
@@ -628,7 +629,7 @@ abstract class HttpHelper
       CURLOPT_ENCODING => '',
       CURLOPT_MAXREDIRS => 10,
       CURLOPT_CONNECTTIMEOUT => 8,
-      CURLOPT_TIMEOUT => 30,
+      CURLOPT_TIMEOUT => $timeout,
       CURLOPT_FOLLOWLOCATION => true,
       CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
       CURLOPT_CUSTOMREQUEST => 'GET',
@@ -645,9 +646,10 @@ abstract class HttpHelper
    * @param string $url Endpoint da requisicao.
    * @param array|string|null $data Para formdata use array associativo com chave => valor. Para JSON use uma string.
    * @param array $headers Um array com headers HTTP a definir, no formato array('Content-type: text/plain', 'Content-length: 100').
+   * @param int $timeout Tempo limite em segundos para receber a resposta da requisicao.
    * @return array|false False em caso de erro. Array com colunas 'code','type','size','body','json'. Body em JSON ja eh entregue adaptado.
    */
-  public static function curlPost($url, $data = null, $headers = array())
+  public static function curlPost($url, $data = null, $headers = array(), $timeout = 30)
   {
     $headers[] = is_array($data) ? 'Content-Type: multipart/form-data' : 'Content-Type: application/json; charset=utf-8';
     $curl = curl_init();
@@ -657,7 +659,7 @@ abstract class HttpHelper
       CURLOPT_ENCODING => '',
       CURLOPT_MAXREDIRS => 10,
       CURLOPT_CONNECTTIMEOUT => 8,
-      CURLOPT_TIMEOUT => 30,
+      CURLOPT_TIMEOUT => $timeout,
       CURLOPT_FOLLOWLOCATION => true,
       CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
       CURLOPT_CUSTOMREQUEST => 'POST',
