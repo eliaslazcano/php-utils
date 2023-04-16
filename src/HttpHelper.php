@@ -479,7 +479,11 @@ abstract class HttpHelper
    */
   public static function obterIp()
   {
-    return $_SERVER['REMOTE_ADDR'];
+    if (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+      return $_SERVER['HTTP_X_REAL_IP'];
+    } else {
+      return $_SERVER['REMOTE_ADDR'];
+    }
   }
 
   /**
