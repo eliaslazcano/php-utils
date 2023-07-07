@@ -23,6 +23,14 @@ abstract class HttpHelper
    */
   protected static $allow_credentials = false;
 
+  private static function applyCorsHeaders()
+  {
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    if (self::$allow_origin) header('Access-Control-Allow-Origin: ' . self::$allow_origin);
+    if (self::$allow_headers) header('Access-Control-Allow-Headers: ' . self::$allow_headers);
+    if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
+  }
+
   /**
    * Define o que sera emitido no header 'Access-Control-Allow-Origin' caso esta classe HttpHelper emita uma resposta.
    * Default empty.
@@ -78,7 +86,7 @@ abstract class HttpHelper
 
   /**
    * Informa o metodo da requisicao HTTP.
-   * @return string 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'.
+   * @return string 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'.
    */
   public static function getMethod()
   {
@@ -225,8 +233,6 @@ abstract class HttpHelper
    */
   public static function erroJson($httpCode = 400, $message = '', $errorId = 1, $extra = '')
   {
-    if (self::$allow_origin) header('Access-Control-Allow-Origin: ' . self::$allow_origin);
-    if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
     if (function_exists('http_response_code')) http_response_code($httpCode);
     else header("HTTP/1.1 $httpCode", true, $httpCode);
     header('Cache-Control: no-cache, no-store, must-revalidate');
@@ -251,17 +257,13 @@ abstract class HttpHelper
   public static function validarGet($emitirErro = true, $allowOrigin = null, $allowHeaders = null)
   {
     header('Access-Control-Allow-Methods: GET, OPTIONS');
-    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . ($allowOrigin ?: self::$allow_origin));
-    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . ($allowHeaders ?: self::$allow_headers));
-    if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
+    if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
+    if ($allowHeaders) header("Access-Control-Allow-Headers: $allowHeaders");
 
-    $method = $_SERVER['REQUEST_METHOD'];
-
-    if ($method !== 'GET' && $method !== 'OPTIONS') {
+    $method = self::getMethod();
+    if ($method !== 'GET') {
       if ($emitirErro) self::erroJson(405, 'Metodo nao permitido');
       else return false;
-    } elseif ($method == 'OPTIONS') {
-      die();
     }
     return true;
   }
@@ -277,17 +279,13 @@ abstract class HttpHelper
   public static function validarPost($emitirErro = true, $allowOrigin = null, $allowHeaders = null)
   {
     header('Access-Control-Allow-Methods: POST, OPTIONS');
-    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . ($allowOrigin ?: self::$allow_origin));
-    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . ($allowHeaders ?: self::$allow_headers));
-    if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
+    if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
+    if ($allowHeaders) header("Access-Control-Allow-Headers: $allowHeaders");
 
-    $method = $_SERVER['REQUEST_METHOD'];
-
-    if ($method !== 'POST' && $method !== 'OPTIONS') {
+    $method = self::getMethod();
+    if ($method !== 'POST') {
       if ($emitirErro) self::erroJson(405, 'Metodo nao permitido');
       else return false;
-    } elseif ($method == 'OPTIONS') {
-      die();
     }
     return true;
   }
@@ -304,17 +302,13 @@ abstract class HttpHelper
   public static function validarMetodo($metodo, $emitirErro = true, $allowOrigin = null, $allowHeaders = null)
   {
     header("Access-Control-Allow-Methods: $metodo, OPTIONS");
-    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . ($allowOrigin ?: self::$allow_origin));
-    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . ($allowHeaders ?: self::$allow_headers));
-    if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
+    if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
+    if ($allowHeaders) header("Access-Control-Allow-Headers: $allowHeaders");
 
-    $method = $_SERVER['REQUEST_METHOD'];
-
-    if ($method !== $metodo && $method !== 'OPTIONS') {
+    $method = self::getMethod();
+    if ($method !== $metodo) {
       if ($emitirErro) self::erroJson(405, 'Metodo nao permitido');
       else return false;
-    } elseif ($method == 'OPTIONS') {
-      die();
     }
     return true;
   }
@@ -339,17 +333,13 @@ abstract class HttpHelper
     $metodosString = count($metodos) > 1 ? implode(", ", $metodos) : $metodos[0]; //Une em string separado por virgula.
 
     header("Access-Control-Allow-Methods: $metodosString, OPTIONS");
-    if ($allowOrigin || self::$allow_origin) header('Access-Control-Allow-Origin: ' . ($allowOrigin ?: self::$allow_origin));
-    if ($allowHeaders || self::$allow_headers) header('Access-Control-Allow-Headers: ' . ($allowHeaders ?: self::$allow_headers));
-    if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
+    if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
+    if ($allowHeaders) header("Access-Control-Allow-Headers: $allowHeaders");
 
-    $method = $_SERVER['REQUEST_METHOD'];
-
-    if (!in_array($method, $metodos) && $method !== 'OPTIONS') {
+    $method = self::getMethod();
+    if (!in_array($method, $metodos)) {
       if ($emitirErro) self::erroJson(405, 'O metodo nao permitido');
       else return false;
-    } elseif ($method === 'OPTIONS') {
-      die();
     }
     return true;
   }
@@ -367,7 +357,7 @@ abstract class HttpHelper
       if (array_key_exists($nome, $dados)) return $dados[$nome];
       else return null;
     } else {
-      switch ($_SERVER['REQUEST_METHOD']) {
+      switch (self::getMethod()) {
         case "DELETE":
         case "GET":
           if (!isset($_GET[$nome])) return null;
@@ -415,7 +405,7 @@ abstract class HttpHelper
       if (!array_key_exists($nome, $dados)) self::erroJson(400, $mensagemErro, 0, $nome);
       return $dados[$nome];
     } else {
-      switch ($_SERVER['REQUEST_METHOD']) {
+      switch (self::getMethod()) {
         case "DELETE":
         case "GET":
           if (!isset($_GET[$nome])) self::erroJson(400, $mensagemErro, 0, $nome);
@@ -700,12 +690,15 @@ abstract class HttpHelper
    */
   public static function useRouter($mainDir, $logFile = null, $noRouteMessage = 'Nenhum webservice corresponde a solicitacao')
   {
+    self::applyCorsHeaders();
     if ($logFile) {
       ini_set('log_errors', 1);
       ini_set('error_log', $logFile);
       ini_set('display_errors', 0);
       error_reporting(E_ALL);
     }
+
+    if (self::getMethod() === 'OPTIONS') die();
 
     $mensagem_notfound = 'Nenhum webservice corresponde a solicitacao';
     $pathInfo = isset($_SERVER['PATH_INFO']);
