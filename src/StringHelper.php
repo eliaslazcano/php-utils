@@ -7,6 +7,9 @@
 
 namespace Eliaslazcano\Helpers;
 
+use DateTime;
+use DateInterval;
+
 class StringHelper
 {
   /**
@@ -348,5 +351,50 @@ class StringHelper
   public static function utf8Decode($string)
   {
     return mb_detect_encoding($string, array('UTF-8', 'ISO-8859-1')) !== 'UTF-8' ? $string : utf8_decode($string);
+  }
+
+  /**
+   * Verifica se a data informada representa dia util (segunda a sexta-feira).
+   * @param string|null $date - Data no formato AAAA-MM-DD. Se for null, assume o valor de date('Y-m-d') (data atual).
+   * @return bool
+   */
+  public static function ehDiaUtil($date = null)
+  {
+    if ($date === null) $date = date('Y-m-d');
+    $dayOfWeek = date('N', strtotime($date));
+    return ($dayOfWeek >= 1 && $dayOfWeek <= 5);
+  }
+
+  /**
+   * Retorna a data do próximo dia util a partir da data informada.
+   * @param string|null $dataInicial - Data no formato AAAA-MM-DD. Se for null, assume o valor de date('Y-m-d') (data atual).
+   * @return string|null - Resultado no formato AAAA-MM-DD. Em caso de erro retorna null.
+   */
+  public static function proximoDiaUtil($dataInicial = null)
+  {
+    if ($dataInicial === null) $dataInicial = date('Y-m-d');
+    $nextDay = date('Y-m-d', strtotime($dataInicial . ' +1 day'));
+    while (!self::ehDiaUtil($nextDay)) {
+      $nextDay = date('Y-m-d', strtotime($nextDay . ' +1 day'));
+    }
+    return $nextDay ?: null;
+  }
+
+  /**
+   * Obtenha uma data resultado da soma de dias corridos em cima de uma data inicial.
+   * @param int $dias - Quantidade de dias corridos para somar na data.
+   * @param string|null $dataInicial - Data no formato AAAA-MM-DD. Se for null, assume o valor de date('Y-m-d') (data atual).
+   * @return string|null - Resultado no formato AAAA-MM-DD. Em caso de erro retorna null.
+   */
+  public static function somarDiasCorridos($dias, $dataInicial = null)
+  {
+    if ($dataInicial === null) $dataInicial = date('Y-m-d');
+    try {
+      $datetime = new DateTime($dataInicial);
+      $datetime->add(new DateInterval('P'.$dias.'D'));
+      return $datetime->format('Y-m-d');
+    } catch (\Exception $e) {
+      return null;
+    }
   }
 }
