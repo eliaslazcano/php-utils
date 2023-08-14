@@ -32,9 +32,9 @@ class ArrayHelper
 
   /**
    * Procura um valor dentro do array que passe na filtragem da funcao callback.
-   * @param array $array O array de origem.
-   * @param callback $function Funcao de filtro, percorre o array fornecendo o item no primeiro parametro e espera um retorno boleano.
-   * @return mixed|null Valor encontrado dentro do array, null caso nao tenha encontrado.
+   * @param array $array - O array de origem.
+   * @param callback $function - Funcao de filtro, percorre o array fornecendo o item no primeiro parametro e espera um retorno boleano.
+   * @return mixed|null - Valor encontrado dentro do array, null caso nao tenha encontrado.
    */
   public static function find($array, $function)
   {
@@ -42,6 +42,18 @@ class ArrayHelper
     $filtered = array_values($filtered);
     if (count($filtered)) return $filtered[0];
     else return null;
+  }
+
+  /**
+   * Retorna true ou false se algum elemento satisfaz o filtro
+   * @param $array - O array de origem.
+   * @param $condicao - Funcao de filtro, percorre o array fornecendo o item no primeiro parametro e espera um retorno boleano.
+   * @return bool - true quando algum elemento satisfaz o filtro, do contrario false.
+   */
+  public static function some($array, $condicao) {
+    return array_reduce($array, function($acumulado, $item) use ($condicao) {
+      return $acumulado || $condicao($item);
+    }, false);
   }
 
   /**
