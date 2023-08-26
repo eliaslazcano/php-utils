@@ -14,6 +14,8 @@ abstract class DatabaseController
   protected $base_de_dados;
   protected $charset = 'utf8';
   protected $timezone = '-03:00';
+  protected $timeout = 20;
+
   private $conexao;
   public $forceColunasCaixaBaixa = false;
 
@@ -22,13 +24,15 @@ abstract class DatabaseController
     if ($conn) $this->conexao = $conn;
     else {
       $dsn = "mysql:host=$this->host;dbname=$this->base_de_dados";
-      if ($this->charset) $dsn .= ";charset=$this->charset;";
+      if ($this->charset) $dsn .= ";charset=$this->charset";
+      $options = array(PDO::ATTR_TIMEOUT => $this->timeout);
       try {
-        $conn = new PDO($dsn, trim($this->usuario), trim($this->senha));
+        $conn = new PDO($dsn, trim($this->usuario), trim($this->senha), $options);
         if ($this->timezone) $conn->exec("SET time_zone='$this->timezone';");
         $this->conexao = $conn;
       } catch (PDOException $e) {
-        $this->aoFalhar($e->getMessage(), 'TENTATIVA DE ABRIR CONEXAO PDO');
+        $exceptionMessage = $e->getMessage();
+        $this->aoFalhar($exceptionMessage, "Fracasso em abrir conexao com a base de dados. Exception->getMessage(): ($exceptionMessage)");
       }
     }
   }
