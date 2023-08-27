@@ -149,6 +149,7 @@ abstract class HttpHelper
   public static function isJson()
   {
     $contentType = self::getHeader('Content-Type');
+    if(!$contentType) return false;
     return substr($contentType, 0, 16) === 'application/json';
   }
 
