@@ -296,6 +296,17 @@ class StringHelper
   }
 
   /**
+   * Descobre o dia da semana a partir da data informada no parametro.
+   * @param string $data Data no formato AAAA-MM-DD, se nao fornecer considera o dia de hoje.
+   * @return int 0 = Domingo, 6 = Sexta-Feira
+   */
+  public static function obterDiaDaSemana($data = null) {
+    if ($data === null) $date = date('Y-m-d');
+    $timestamp = strtotime($data); // Converte a data para timestamp
+    return (int)date('w', $timestamp); // Obtem o numero do dia da semana (0 para domingo, 6 para sexta-feira)
+  }
+
+  /**
    * Obtem o nome do mes de acordo com seu numero no calendario.
    * @param int|null $numero_do_mes Opcional. 1 para Janeiro ate 12 para Dezembro. null para o mes atual.
    * @return string
