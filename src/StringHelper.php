@@ -274,7 +274,7 @@ class StringHelper
    */
   public static function diaDaSemana($dia = null)
   {
-    $dia_da_semana = $dia ? (int)$dia : (int)date('w');
+    $dia_da_semana = intval($dia !== null ? $dia : date('w'));
     switch ($dia_da_semana) {
       case 0:
         return 'Domingo';
