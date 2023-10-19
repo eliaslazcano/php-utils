@@ -18,18 +18,23 @@ class ClienteHttp
    */
   public function __construct(string $baseUrl = '', int $timeout = 60)
   {
-    if ($baseUrl) $this->baseUrl = rtrim(trim($baseUrl), '/');
-    if ($timeout !== null) $this->timeout = $timeout;
+    $this->baseUrl = rtrim(trim($baseUrl), '/');
+    $this->timeout = $timeout;
   }
 
-  public function interceptarResposta(RespostaHttp $resposta): RespostaHttp
+  /**
+   * Funcao que eh auto invocada para modificar a resposta Http.
+   * @param RespostaHttp $respostaHttp
+   * @return RespostaHttp
+   */
+  public function interceptarResposta(RespostaHttp $respostaHttp): RespostaHttp
   {
     //Padrao para erros JSON das APIs que utilizam o HttpHelper do Elias
-    if (!$resposta->error && $resposta->response && $resposta->code >= 400 && $resposta->isJson()) {
-      $conteudo = $resposta->getJson();
-      if (!empty($conteudo->mensagem)) $resposta->error = $conteudo->mensagem;
+    if (!$respostaHttp->error && $respostaHttp->response && $respostaHttp->code >= 400 && $respostaHttp->isJson()) {
+      $conteudo = $respostaHttp->getJson();
+      if (!empty($conteudo->mensagem)) $respostaHttp->error = $conteudo->mensagem;
     }
-    return $resposta;
+    return $respostaHttp;
   }
 
   /**
@@ -46,7 +51,7 @@ class ClienteHttp
     $url = $this->baseUrl . '/' . $endpoint;
 
     $headers[] = 'Cache-Control: no-cache';
-    if (in_array($method, ['POST','PUT','PATCH'])) $headers[] = 'Content-Type: application/json';
+    if ($body && in_array($method, array('POST','PUT','PATCH'))) $headers[] = 'Content-Type: application/json';
 
     //CONFIGURA O CURL
     $curl = curl_init();
@@ -56,14 +61,21 @@ class ClienteHttp
       CURLOPT_CUSTOMREQUEST => $method,
       CURLOPT_HTTPHEADER => $headers,
       CURLOPT_FOLLOWLOCATION => true,
-      CURLOPT_MAXREDIRS => 12,
+      CURLOPT_MAXREDIRS => 8,
       CURLOPT_TIMEOUT => $this->timeout,
       CURLOPT_CONNECTTIMEOUT => 8,
       CURLOPT_SSL_VERIFYHOST => 0,
       CURLOPT_SSL_VERIFYPEER => 0,
     ]);
-
-    if (in_array($method, ['POST','PUT','PATCH'])) curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
+    if ($body) {
+      switch ($method) {
+        case 'POST':
+        case 'PUT':
+        case 'PATCH':
+          curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
+          break;
+      }
+    }
 
     //EXECUTA O CURL
     $return = array();
