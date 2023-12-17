@@ -701,18 +701,20 @@ abstract class HttpHelper
 
     if (self::getMethod() === 'OPTIONS') die();
 
+    $mainDir = rtrim($mainDir, '/');
     $mensagem_notfound = 'Nenhum webservice corresponde a solicitacao';
+
     $pathInfo = isset($_SERVER['PATH_INFO']);
     $origPathInfo = isset($_SERVER['ORIG_PATH_INFO']);
     if ($pathInfo) $caminho = $_SERVER['PATH_INFO'];
     elseif ($origPathInfo) $caminho = $_SERVER['ORIG_PATH_INFO'];
+    elseif (file_exists("$mainDir/index.php")) require "$mainDir/index.php";
     else self::erroJson(404, $noRouteMessage);
 
     if (!empty($caminho)) $caminho = trim($caminho, '/'); #Remove a barra inicial
 
     if (empty($caminho)) self::erroJson(404, $noRouteMessage, 2);
     else {
-      $mainDir = rtrim($mainDir, '/');
       if (file_exists("$mainDir/$caminho.php")) require "$mainDir/$caminho.php";
       elseif (file_exists("$mainDir/$caminho/index.php")) require "$mainDir/$caminho/index.php";
       else self::erroJson(404, $noRouteMessage, 3);
