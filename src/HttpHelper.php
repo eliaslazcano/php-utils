@@ -684,9 +684,9 @@ abstract class HttpHelper
 
   /**
    * Expoe um outro diretorio para atuar como diretorio primario onde as paginas PHP serao expostas ao cliente.
-   * @param string $mainDir Caminho do diretorio raiz dos arquivos que sera expostos. Recomendo usar realpath().
-   * @param string|null $logFile Nome do arquivo de log para registrar erros, coloque o caminho completo e nome do arquivo desejado. Recomendo usar realpath().
-   * @param string $noRouteMessage Mensagem quando a URL nao corresponde a nenhuma pagina. Retornada em JSON e HTTP 404.
+   * @param string $mainDir Caminho do diretorio raiz dos arquivos que sera expostos.
+   * @param string|null $logFile Nome do arquivo de log para registrar erros, coloque o caminho completo e nome do arquivo desejado.
+   * @param string $noRouteMessage Se a rota nao existir, e nao houver um arquivo 404.php, esta mensagem eh retornada em JSON com erro 404.
    * @return void
    */
   public static function useRouter($mainDir, $logFile = null, $noRouteMessage = 'Nenhum webservice corresponde a solicitacao')
@@ -698,26 +698,26 @@ abstract class HttpHelper
       ini_set('display_errors', 0);
       error_reporting(E_ALL);
     }
-
     if (self::getMethod() === 'OPTIONS') die();
 
     $mainDir = rtrim($mainDir, '/');
-    $mensagem_notfound = 'Nenhum webservice corresponde a solicitacao';
+    $url = isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : (isset($_SERVER['ORIG_PATH_INFO']) ? $_SERVER['ORIG_PATH_INFO'] : null);
+    if ($url) $caminhoLocal = trim($url,'/');
 
-    $pathInfo = isset($_SERVER['PATH_INFO']);
-    $origPathInfo = isset($_SERVER['ORIG_PATH_INFO']);
-    if ($pathInfo) $caminho = $_SERVER['PATH_INFO'];
-    elseif ($origPathInfo) $caminho = $_SERVER['ORIG_PATH_INFO'];
-    elseif (file_exists("$mainDir/index.php")) require "$mainDir/index.php";
-    else self::erroJson(404, $noRouteMessage);
-
-    if (!empty($caminho)) $caminho = trim($caminho, '/'); #Remove a barra inicial
-
-    if (empty($caminho)) self::erroJson(404, $noRouteMessage, 2);
+    if ($caminhoLocal && file_exists("$mainDir/$caminhoLocal.php")) {
+      return require "$mainDir/$caminhoLocal.php";
+    }
+    elseif ($caminhoLocal && file_exists("$mainDir/$caminhoLocal/index.php")) {
+      return require "$mainDir/$caminhoLocal/index.php";
+    }
+    elseif (!$caminhoLocal && file_exists("$mainDir/index.php")) {
+      return require "$mainDir/index.php";
+    }
+    elseif (file_exists("$mainDir/404.php")) {
+      return require "$mainDir/404.php";
+    }
     else {
-      if (file_exists("$mainDir/$caminho.php")) require "$mainDir/$caminho.php";
-      elseif (file_exists("$mainDir/$caminho/index.php")) require "$mainDir/$caminho/index.php";
-      else self::erroJson(404, $noRouteMessage, 3);
+      self::erroJson(404, $noRouteMessage);
     }
   }
 }

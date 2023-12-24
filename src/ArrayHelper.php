@@ -2,6 +2,7 @@
 /**
  * Simplifica modificacoes ou buscas em arrays.
  * @author Elias Lazcano Castro Neto
+ * @version 2023-12-20
  * @since 5.3
  */
 namespace Eliaslazcano\Helpers;
@@ -10,13 +11,15 @@ class ArrayHelper
 {
   /**
    * Filtra os itens do array, retornando apenas aqueles que retornam true na funcao de filtro.
-   * @param array $array O array para filtragem.
+   * @param array $array O array que será filtrado.
    * @param callback $function Funcao de filtro, percorre o array fornecendo o item no primeiro parametro e espera um retorno boleano.
+   * @param bool $resetIndexes Refaz os indices do array (com array_values). False = mantem os indices.
    * @return array
    */
-  public static function filter($array, $function)
+  public static function filter($array, $function, $resetIndexes = false)
   {
-    return array_filter($array, $function);
+    $filtered = array_filter($array, $function);
+    return $resetIndexes ? array_values($filtered) : $filtered;
   }
 
   /**
@@ -38,22 +41,20 @@ class ArrayHelper
    */
   public static function find($array, $function)
   {
-    $filtered = self::filter($array, $function);
-    $filtered = array_values($filtered);
-    if (count($filtered)) return $filtered[0];
-    else return null;
+    $filtered = self::filter($array, $function, true);
+    return count($filtered) > 0 ? $filtered[0] : null;
   }
 
   /**
    * Retorna true ou false se algum elemento satisfaz o filtro
-   * @param $array - O array de origem.
-   * @param $condicao - Funcao de filtro, percorre o array fornecendo o item no primeiro parametro e espera um retorno boleano.
+   * @param array $array - O array de origem.
+   * @param callback $function - Funcao de filtro, percorre o array fornecendo o item no primeiro parametro e espera um retorno boleano.
    * @return bool - true quando algum elemento satisfaz o filtro, do contrario false.
    */
-  public static function some($array, $condicao) {
-    return array_reduce($array, function($acumulado, $item) use ($condicao) {
-      return $acumulado || $condicao($item);
-    }, false);
+  public static function some($array, $function)
+  {
+    $filtered = self::filter($array, $function, true);
+    return count($filtered) > 0;
   }
 
   /**
