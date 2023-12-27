@@ -702,7 +702,7 @@ abstract class HttpHelper
 
     $mainDir = rtrim($mainDir, '/');
     $url = isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : (isset($_SERVER['ORIG_PATH_INFO']) ? $_SERVER['ORIG_PATH_INFO'] : null);
-    if ($url) $caminhoLocal = trim($url,'/');
+    $caminhoLocal = $url ? trim($url,'/') : null;
 
     if ($caminhoLocal && file_exists("$mainDir/$caminhoLocal.php")) {
       return require "$mainDir/$caminhoLocal.php";
