@@ -257,6 +257,18 @@ class StringHelper
   }
 
   /**
+   * Formata um numero de CEP, adicionando a mascara ideal na string.
+   * @param string $cep Somente digitos numericos serao considerados no algoritmo, o resto sera removido.
+   * @return string CEP com mascara.
+   */
+  public static function formatCep($cep)
+  {
+    $num = self::extractNumbers($cep);
+    if (!$num || strlen($num) !== 8) return $cep;
+    return substr($num, 0, 2) . '.' . substr($num, 2, 3) . '-' . substr($num, 5);
+  }
+
+  /**
    * Obtem o primeiro nome de uma pessoa ao fornecer o nome completo.
    * @param string $nome_completo Nome completo.
    * @return string Primeiro nome.
@@ -362,6 +374,19 @@ class StringHelper
   public static function utf8Decode($string)
   {
     return mb_detect_encoding($string, array('UTF-8', 'ISO-8859-1')) !== 'UTF-8' ? $string : utf8_decode($string);
+  }
+
+  /**
+   * @param string $search A substring que sera buscada dentro do texto.
+   * @param string $replace O novo valor que ira substituir.
+   * @param string $subject O texto recipiente.
+   * @return string
+   */
+  public static function replaceLastOccurrence($search, $replace, $subject)
+  {
+    $pos = strrpos($subject, $search);
+    if($pos !== false) $subject = substr_replace($subject, $replace, $pos, strlen($search));
+    return $subject;
   }
 
   /**
