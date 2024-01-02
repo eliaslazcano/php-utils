@@ -82,6 +82,16 @@ class StringHelper
   }
 
   /**
+   * Mantem na string apenas os numeros, letras (com acentos tambem) e espacos.
+   * @param $string
+   * @return string
+   */
+  public static function removeSimbolos($string)
+  {
+    return preg_replace("/[^a-zA-Z0-9\p{L}\s]/u", "", $string);
+  }
+
+  /**
    * Extraia os numeros presentes na string
    * @param string $string
    * @param bool $separadosEmArray
