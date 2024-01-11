@@ -18,7 +18,7 @@ class ClienteHttp
    */
   public function __construct(string $baseUrl = '', int $timeout = 60)
   {
-    $this->baseUrl = rtrim(trim($baseUrl), '/');
+    $this->baseUrl = rtrim(trim($baseUrl ?: $this->baseUrl ?: ''), '/');
     $this->timeout = $timeout;
   }
 
