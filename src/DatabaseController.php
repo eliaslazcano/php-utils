@@ -19,13 +19,13 @@ abstract class DatabaseController
   private $conexao;
   public $forceColunasCaixaBaixa = false;
 
-  public function __construct(PDO $conn = null)
+  public function __construct(PDO $conn = null, $persistent = true)
   {
     if ($conn) $this->conexao = $conn;
     else {
       $dsn = "mysql:host=$this->host;dbname=$this->base_de_dados";
       if ($this->charset) $dsn .= ";charset=$this->charset";
-      $options = array(PDO::ATTR_TIMEOUT => $this->timeout);
+      $options = array(PDO::ATTR_TIMEOUT => $this->timeout, PDO::ATTR_PERSISTENT => $persistent);
       try {
         $conn = new PDO($dsn, trim($this->usuario), trim($this->senha), $options);
         if ($this->timezone) $conn->exec("SET time_zone='$this->timezone';");
