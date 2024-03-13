@@ -3,7 +3,7 @@
   "type": "library",
   "license": "MIT",
   "description": "Biblioteca de helpers para simplificar comandos rotineiros do PHP",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "autoload": {
     "psr-4": {
       "Eliaslazcano\\Helpers\\": "src/"

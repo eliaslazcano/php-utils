@@ -443,4 +443,46 @@ class StringHelper
       return null;
     }
   }
+
+  /**
+   * Confere se um CPF é verdadeiro ou falso.
+   * @param string $cpf
+   * @return bool
+   */
+  public static function validarCPF($cpf) {
+    $sanitizedCpf = preg_replace('/\D/', '', strval($cpf));
+    $invalidCpfPatterns = array(
+      '00000000000',
+      '11111111111',
+      '22222222222',
+      '33333333333',
+      '44444444444',
+      '55555555555',
+      '66666666666',
+      '77777777777',
+      '88888888888',
+      '99999999999',
+    );
+
+    if (strlen($sanitizedCpf) !== 11 || in_array($sanitizedCpf, $invalidCpfPatterns)) return false;
+
+    // Valida 1o digito
+    $add = 0;
+    for ($i = 0; $i < 9; $i++) {
+      $add += intval($sanitizedCpf[$i]) * (10 - $i);
+    }
+    $rev = 11 - ($add % 11);
+    if ($rev === 10 || $rev === 11) $rev = 0;
+    if ($rev !== intval($sanitizedCpf[9])) return false;
+
+    // Valida 2o digito
+    $add = 0;
+    for ($i = 0; $i < 10; $i++) {
+      $add += intval($sanitizedCpf[$i]) * (11 - $i);
+    }
+    $rev = 11 - ($add % 11);
+    if ($rev === 10 || $rev === 11) $rev = 0;
+
+    return $rev === intval($sanitizedCpf[10]);
+  }
 }
