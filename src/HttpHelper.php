@@ -16,7 +16,7 @@ abstract class HttpHelper
   /**
    * @var string|null Repostas HTTP emitidas por esta classe HttpHelper devem mencionar isso no header 'Access-Control-Allow-Headers'. Default: 'Authorization, Content-Type, Cache-Control'.
    */
-  protected static $allow_headers = 'Authorization, Content-Type, Cache-Control';
+  protected static $allow_headers = 'Accept, Authorization, Cache-Control, Content-Type, Content-Disposition';
 
   /**
    * @var bool Repostas HTTP emitidas por esta classe HttpHelper devem mencionar o header 'Access-Control-Allow-Credentials: true'. Default: false.
