@@ -672,14 +672,22 @@ abstract class HttpHelper
    * @param string $texto Texto a incrementar, automaticamente concatena a data e hora do PHP no inicio do texto.
    * @param string $diretorio Diretorio absoluto onde o arquivo sera gravado, tanto faz se o ultimo caractere for '/'.
    * @param string $arquivo Nome do arquivo de texto.
-   * @return void
+   * @return string|null Retorna null em caso de sucesso, string para mensagem de erro.
    */
   public static function gravarLog($texto, $diretorio, $arquivo = 'log.txt')
   {
-    $texto = '[' . date('Y-m-d H:i:s') . '] ' . trim($texto);
-    $file = fopen(rtrim($diretorio, '/') . '/' . $arquivo, 'a');
-    fwrite($file, $texto . PHP_EOL);
-    fclose($file);
+    $diretorio = rtrim($diretorio, '/');
+    if (!file_exists($diretorio)) {
+      if (!mkdir($diretorio, 0777, true)) return 'Não foi possível criar o diretório de log';
+    }
+
+    $fullPath = "$diretorio/$arquivo";
+    if (file_exists($fullPath) && is_dir($fullPath)) return 'O log não pode ser gravado porque há um diretório com o mesmo nome do arquivo';
+
+    $texto = '[' . date('Y-m-d H:i:s') . '] ' . trim($texto) . PHP_EOL;
+    $sucesso = file_put_contents($fullPath, $texto);
+    if (!$sucesso) return 'Não foi possível gravar o arquivo de log';
+    return null;
   }
 
   /**
