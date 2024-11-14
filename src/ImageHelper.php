@@ -1,4 +1,7 @@
 <?php
+/**
+ * Essa classe não é mais mantida desde 2024-11-13, considere utilizar Image/GdUtils.
+ */
 
 namespace Eliaslazcano\Helpers;
 
