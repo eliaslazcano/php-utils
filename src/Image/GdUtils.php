@@ -336,7 +336,7 @@ class GdUtils
    * @return string - String binaria.
    * @throws Exception - Dispara se o formato da saída for inválido.
    */
-  public static function toString($imagemGd, ?int $type = null, int $quality = 90): ?string
+  public static function toString($imagemGd, ?int $type = null, int $quality = 90): string
   {
     $saidasSuportadas = [IMAGETYPE_JPEG, IMAGETYPE_PNG];
     if (self::compatibilidadeWebp()) $saidasSuportadas[] = IMAGETYPE_WEBP;
