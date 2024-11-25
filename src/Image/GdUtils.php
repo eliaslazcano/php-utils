@@ -241,7 +241,7 @@ class GdUtils
    * @return resource - Imagem em formato GD.
    * @throws Exception - Em caso de falha, a mensagem de erro é incluida na Exception.
    */
-  public static function resize($imagemGd, int $maxWidth, int $maxHeight, bool $permitirAmpliar)
+  public static function resize($imagemGd, int $maxWidth, int $maxHeight, bool $permitirAmpliar = false)
   {
     $originalWidth = imagesx($imagemGd);
     $originalHeight = imagesy($imagemGd);
