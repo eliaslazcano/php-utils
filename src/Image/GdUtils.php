@@ -146,7 +146,7 @@ class GdUtils
     if (!in_array($type, $saidasSuportadas)) throw new Exception('Formato de saída não suportado.');
     $sucesso = false;
     if ($type === IMAGETYPE_JPEG) {
-      $imagemComFundoBranco = self::pintarFundo($imagemGd);
+      $imagemComFundoBranco = self::pintarPixelsTransparentes($imagemGd);
       $sucesso = imagejpeg($imagemComFundoBranco, $destino, $quality); //Salva a imagem
       imagedestroy($imagemComFundoBranco);
     }
@@ -191,7 +191,7 @@ class GdUtils
     if (!in_array($type, $saidasSuportadas)) throw new Exception('Formato de saída não suportado.');
     ob_start();
     if ($type === IMAGETYPE_JPEG) {
-      $imagemComFundoBranco = self::pintarFundo($imagemGd);
+      $imagemComFundoBranco = self::pintarPixelsTransparentes($imagemGd);
       imagejpeg($imagemComFundoBranco, null, $quality); //Salva a imagem
       imagedestroy($imagemComFundoBranco);
     }
@@ -413,67 +413,137 @@ class GdUtils
   }
 
   /**
-   * Pinta o fundo transparente de uma imagem por uma cor RGB.
-   * @param resource $imagemGd - Imagem GD.
-   * @param int $red - Vermelho de 0 a 255.
-   * @param int $green - Verde de 0 a 255.
-   * @param int $blue - Azul de 0 a 255.
-   * @return resource - Imagem GD.
+   * Substitui pixels transparentes em uma imagem por uma cor RGB sólida.
+   * @param resource $imagemGd - Recurso GD da imagem original.
+   * @param int $red - Componente vermelho (0 a 255).
+   * @param int $green - Componente verde (0 a 255).
+   * @param int $blue - Componente azul (0 a 255).
+   * @return resource - Imagem GD com fundo alterado.
    */
-  public static function pintarFundo($imagemGd, int $red = 255, int $green = 255, int $blue = 255)
-  {
-    // Cria uma nova imagem com as mesmas dimensoes da original
+  public static function pintarPixelsTransparentes($imagemGd, int $red = 255, int $green = 255, int $blue = 255) {
     $largura = imagesx($imagemGd);
     $altura = imagesy($imagemGd);
-    $imagemNova = imagecreatetruecolor($largura, $altura);
 
-    //Preenche a nova imagem com branco
-    $fundoBranco = imagecolorallocate($imagemNova, $red, $green, $blue);
-    imagefill($imagemNova, 0, 0, $fundoBranco);
+    $imagemNova = imagecreatetruecolor($largura, $altura); // Cria uma nova imagem com fundo sólido
 
-    //Copia a imagem original para a nova imagem com fundo branco
+    // Preenche o fundo com a cor especificada
+    $corFundo = imagecolorallocate($imagemNova, $red, $green, $blue);
+    imagefill($imagemNova, 0, 0, $corFundo);
+
+    // Habilita a mesclagem de transparência
+    imagealphablending($imagemGd, true);
+    imagesavealpha($imagemGd, true);
+
+    // Copia a imagem original para a nova, preservando transparência e fundo
     imagecopy($imagemNova, $imagemGd, 0, 0, 0, 0, $largura, $altura);
+
     return $imagemNova;
   }
 
   /**
-   * Recorta a imagem, removendo as laterais da imagem com pixel na cor informada.
-   * @param resource $imagemGd - Imagem em formato GD criado por funcoes como imagecreatefromjpeg().
-   * @param int $corBorda - Cor da borda que será removida, em hexadecimal (rgb) com o prefixo '0x'. Padrao: branco.
-   * @return resource - Recurso que pode ser utilizado por funções da extensão GD. Use imagedestroy() para liberar memória.
+   * Converte pixels próximos de uma cor específica para outra cor desejada.
+   * @param resource $imagemGd - Instância GD da imagem.
+   * @param array $corBase - Cor de referência para comparação ([R, G, B]).
+   * @param array $corNova - Cor desejada para conversão ([R, G, B]).
+   * @param int $tolerancia - Tolerância para variação de cor (0 a 255).
+   * @return resource - Imagem alterada.
    */
-  public static function apararBordas ($imagemGd, int $corBorda = 0xFFFFFF) {
-    //Top
-    for($b_top = 0; $b_top < imagesy($imagemGd); ++$b_top) {
-      for($x = 0; $x < imagesx($imagemGd); ++$x) {
-        if(imagecolorat($imagemGd, $x, $b_top) != $corBorda) break 2;
+  public static function pintarCoresProximas($imagemGd, array $corBase = [255, 255, 255], array $corNova = [255, 255, 255], int $tolerancia = 10) {
+    $largura = imagesx($imagemGd);
+    $altura = imagesy($imagemGd);
+
+    // Percorre cada pixel da imagem
+    for ($x = 0; $x < $largura; $x++) {
+      for ($y = 0; $y < $altura; $y++) {
+        $rgb = imagecolorat($imagemGd, $x, $y);
+        $cores = imagecolorsforindex($imagemGd, $rgb);
+
+        // Calcula a diferença de cor em cada canal
+        $difR = abs($cores['red'] - $corBase[0]);
+        $difG = abs($cores['green'] - $corBase[1]);
+        $difB = abs($cores['blue'] - $corBase[2]);
+
+        // Se a diferença estiver dentro da tolerância, substitui a cor
+        if ($difR <= $tolerancia && $difG <= $tolerancia && $difB <= $tolerancia) {
+          $novaCor = imagecolorallocate($imagemGd, $corNova[0], $corNova[1], $corNova[2]);
+          imagesetpixel($imagemGd, $x, $y, $novaCor);
+        }
+      }
+    }
+    return $imagemGd;
+  }
+
+  /**
+   * Recorta a imagem, removendo as bordas com pixels na cor informada.
+   * @param resource $imagemGd - Recurso GD da imagem.
+   * @param int $corBorda - Cor da borda em hexadecimal (ex: 0xFFFFFF para branco).
+   * @param int $tolerancia - Tolerância para pequenas variações de cor (0 a 255).
+   * @return resource - Imagem recortada.
+   * @throws Exception
+   */
+  public static function apararBordas($imagemGd, int $corBorda = 0xFFFFFF, int $tolerancia = 0) {
+    $largura = imagesx($imagemGd);
+    $altura = imagesy($imagemGd);
+
+    if (!$largura || !$altura) throw new Exception('Não foi possível identificar a resolução da imagem.');
+
+    // Extrai componentes RGB da cor da borda
+    $rBorda = ($corBorda >> 16) & 0xFF;
+    $gBorda = ($corBorda >> 8) & 0xFF;
+    $bBorda = $corBorda & 0xFF;
+
+    // Função auxiliar para verificar se a cor está dentro da tolerância
+    $corDentroTolerancia = function($corPixel) use ($rBorda, $gBorda, $bBorda, $tolerancia) {
+      $rPixel = ($corPixel >> 16) & 0xFF;
+      $gPixel = ($corPixel >> 8) & 0xFF;
+      $bPixel = $corPixel & 0xFF;
+      return abs($rPixel - $rBorda) <= $tolerancia &&
+        abs($gPixel - $gBorda) <= $tolerancia &&
+        abs($bPixel - $bBorda) <= $tolerancia;
+    };
+
+    // Topo
+    for ($top = 0; $top < $altura; $top++) {
+      for ($x = 0; $x < $largura; $x++) {
+        if (!$corDentroTolerancia(imagecolorat($imagemGd, $x, $top))) break 2;
       }
     }
 
-    //Bottom
-    for($b_btm = 0; $b_btm < imagesy($imagemGd); ++$b_btm) {
-      for($x = 0; $x < imagesx($imagemGd); ++$x) {
-        if(imagecolorat($imagemGd, $x, imagesy($imagemGd) - $b_btm-1) != $corBorda) break 2;
+    // Base
+    for ($bottom = 0; $bottom < $altura; $bottom++) {
+      for ($x = 0; $x < $largura; $x++) {
+        if (!$corDentroTolerancia(imagecolorat($imagemGd, $x, $altura - $bottom - 1))) break 2;
       }
     }
 
-    //Left
-    for($b_lft = 0; $b_lft < imagesx($imagemGd); ++$b_lft) {
-      for($y = 0; $y < imagesy($imagemGd); ++$y) {
-        if(imagecolorat($imagemGd, $b_lft, $y) != $corBorda) break 2;
+    // Esquerda
+    for ($left = 0; $left < $largura; $left++) {
+      for ($y = 0; $y < $altura; $y++) {
+        if (!$corDentroTolerancia(imagecolorat($imagemGd, $left, $y))) break 2;
       }
     }
 
-    //Right
-    for($b_rt = 0; $b_rt < imagesx($imagemGd); ++$b_rt) {
-      for($y = 0; $y < imagesy($imagemGd); ++$y) {
-        if(imagecolorat($imagemGd, imagesx($imagemGd) - $b_rt-1, $y) != $corBorda) break 2;
+    // Direita
+    for ($right = 0; $right < $largura; $right++) {
+      for ($y = 0; $y < $altura; $y++) {
+        if (!$corDentroTolerancia(imagecolorat($imagemGd, $largura - $right - 1, $y))) break 2;
       }
     }
 
-    $newimg = imagecreatetruecolor(imagesx($imagemGd) - ($b_lft + $b_rt), imagesy($imagemGd) - ($b_top + $b_btm));
-    imagecopy($newimg, $imagemGd, 0, 0, $b_lft, $b_top, imagesx($newimg), imagesy($newimg));
-    return $newimg;
+    // Calcula a nova largura e altura
+    $novaLargura = $largura - ($left + $right);
+    $novaAltura = $altura - ($top + $bottom);
+
+    // Valida se as dimensões são válidas
+    if ($novaLargura <= 0 || $novaAltura <= 0) {
+      throw new Exception('A imagem não pode ser recortada com essas configurações.');
+    }
+
+    // Cria uma nova imagem e copia o conteúdo recortado
+    $novaImagem = imagecreatetruecolor($novaLargura, $novaAltura);
+    imagecopy($novaImagem, $imagemGd, 0, 0, $left, $top, $novaLargura, $novaAltura);
+
+    return $novaImagem;
   }
 
   /**
