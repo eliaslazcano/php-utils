@@ -35,13 +35,34 @@ class GdUtils
 
   /**
    * Calcula a quantidade de memória necessária para manipular a imagem com GD.
-   * @param string $path
-   * @return float
+   * @param string $path - Caminho para o arquivo da imagem.
+   * @return float - Memória estimada em bytes.
+   * @throws Exception - Se o arquivo não for uma imagem válida.
    */
   public static function calcularMemoriaNecessariaEdicao(string $path): float
   {
-    $aImageInfo = getimagesize($path);
-    return round((($aImageInfo[0] * $aImageInfo[1] * $aImageInfo['bits'] * $aImageInfo['channels'] / 8 + Pow(2, 16)) * 1.65));
+    if (!file_exists($path)) { // Verifica se o arquivo existe
+      throw new Exception("Arquivo não encontrado: $path");
+    }
+
+    $aImageInfo = getimagesize($path); // Obtém informações da imagem
+    if ($aImageInfo === false) {
+      throw new Exception("Não foi possível obter informações da imagem.");
+    }
+
+    // Largura e altura
+    $largura = $aImageInfo[0];
+    $altura = $aImageInfo[1];
+
+    // Verifica e define valores padrão para bits e canais
+    $bits = $aImageInfo['bits'] ?? 8; // Padrão: 8 bits por canal
+    $canais = $aImageInfo['channels'] ?? 3; // Padrão: 3 canais (RGB)
+
+    // Calcula a memória necessária
+    $memoria = ($largura * $altura * $bits * $canais / 8) + pow(2, 16);
+
+    // Aplica o fator de segurança (1.65)
+    return round($memoria * 1.65);
   }
 
   //Conversões
