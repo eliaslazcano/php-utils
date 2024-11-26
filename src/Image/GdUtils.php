@@ -441,16 +441,27 @@ class GdUtils
   }
 
   /**
-   * Converte pixels próximos de uma cor específica para outra cor desejada.
+   * Converte pixels próximos de uma cor específica para outra cor, incluindo transparência.
    * @param resource $imagemGd - Instância GD da imagem.
    * @param array $corBase - Cor de referência para comparação ([R, G, B]).
-   * @param array $corNova - Cor desejada para conversão ([R, G, B]).
+   * @param array|null $corNova - Cor desejada ([R, G, B]) ou null para tornar transparente.
    * @param int $tolerancia - Tolerância para variação de cor (0 a 255).
    * @return resource - Imagem alterada.
    */
-  public static function pintarCoresProximas($imagemGd, array $corBase = [255, 255, 255], array $corNova = [255, 255, 255], int $tolerancia = 10) {
+  public static function pintarCoresProximas($imagemGd, array $corBase = [255, 255, 255], ?array $corNova = null, int $tolerancia = 10) {
     $largura = imagesx($imagemGd);
     $altura = imagesy($imagemGd);
+
+    // Garante suporte a transparência
+    imagealphablending($imagemGd, false);
+    imagesavealpha($imagemGd, true);
+
+    // Define a nova cor (transparente ou opaca)
+    if (is_null($corNova)) {
+      $novaCor = imagecolorallocatealpha($imagemGd, 0, 0, 0, 127); // Totalmente transparente
+    } else {
+      $novaCor = imagecolorallocate($imagemGd, $corNova[0], $corNova[1], $corNova[2]);
+    }
 
     // Percorre cada pixel da imagem
     for ($x = 0; $x < $largura; $x++) {
@@ -465,7 +476,6 @@ class GdUtils
 
         // Se a diferença estiver dentro da tolerância, substitui a cor
         if ($difR <= $tolerancia && $difG <= $tolerancia && $difB <= $tolerancia) {
-          $novaCor = imagecolorallocate($imagemGd, $corNova[0], $corNova[1], $corNova[2]);
           imagesetpixel($imagemGd, $x, $y, $novaCor);
         }
       }
