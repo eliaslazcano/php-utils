@@ -279,14 +279,43 @@ class StringHelper
   }
 
   /**
+   * Reduz um nome completo a um formato abreviado, limitando o número de palavras adicionais após o primeiro nome.
+   * @param string $nomeCompleto O nome completo a ser reduzido.
+   * @param int $palavrasAdicionais O número de palavras adicionais a incluir além do primeiro nome.
+   * - Se for positivo, inclui palavras a partir do primeiro nome.
+   * - Se for negativo, inclui palavras a partir do final.
+   * @return string O nome reduzido. Retorna uma string vazia se o nome completo for vazio.
+   */
+  public static function reduzirNome($nomeCompleto, $palavrasAdicionais = -1)
+  {
+    $nomeCompleto = trim($nomeCompleto); // Remova espaços extras no início e no final
+    if (!$nomeCompleto) return ''; // Retorna vazio se o nome completo for vazio
+
+    $palavras = explode(' ', $nomeCompleto); // Divide o nome em palavras
+    if (count($palavras) === 1) return $palavras[0]; // Verifica se há pelo menos um nome
+
+    $primeiroNome = array_shift($palavras); // O primeiro nome será sempre incluído
+
+    // Verifica o limite de palavras adicionais, garantindo não exceda o tamanho do array
+    $limite = min(abs($palavrasAdicionais), count($palavras));
+
+    // Se o número de palavras for positivo
+    if ($palavrasAdicionais > 0) $palavras = array_slice($palavras, 0, $limite);
+    elseif ($palavrasAdicionais < 0) $palavras = array_slice($palavras, $palavrasAdicionais, $limite);
+    else $palavras = array(); // Apenas o primeiro nome se $palavrasAdicionais for 0
+
+    // Junta o primeiro nome com as palavras extras e retorna
+    return $primeiroNome . ($palavras ? ' ' . implode(' ', $palavras) : '');
+  }
+
+  /**
    * Obtem o primeiro nome de uma pessoa ao fornecer o nome completo.
-   * @param string $nome_completo Nome completo.
+   * @param string $nomeCompleto Nome completo.
    * @return string Primeiro nome.
    */
-  public static function primeiroNome($nome_completo)
+  public static function primeiroNome($nomeCompleto)
   {
-    $nomes = explode(' ', trim($nome_completo));
-    return $nomes ? $nomes[0] : '';
+    return self::reduzirNome($nomeCompleto, 0);
   }
 
   /**
