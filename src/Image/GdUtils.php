@@ -178,22 +178,22 @@ class GdUtils
   }
 
   /**
-   * Gera um arquivo temporário da imagem informada, retornando o caminho absoluto.
-   * O arquivo é apagado sozinho quando o script php chegar ao fim.
+   * Gera um arquivo temporário da imagem informada, retornando o caminho absoluto e outras informações.
+   * O arquivo é apagado sozinho quando o script php chegar ao fim ou se fizer fclose() no indice 'file'.
    * @param $imagemGd - Imagem em formato GD.
    * @param int $type - Constantes como IMAGETYPE_JPEG, IMAGETYPE_PNG ou IMAGETYPE_WEBP.
    * @param int $quality - Qualidade entre 0 a 100.
-   * @return string - Caminho até o arquivo temporário, ex: '/tmp/phpFx0513a'.
+   * @return array ['uri' => String, 'size' => Int, 'file' => resource]
    * @throws Exception
    */
-  public static function toFileTmp($imagemGd, int $type = IMAGETYPE_JPEG, int $quality = 90): string
+  public static function toFileTmp($imagemGd, int $type = IMAGETYPE_JPEG, int $quality = 90): array
   {
     $imagemStr = self::toString($imagemGd, $type, $quality);
     $tmpFile = tmpfile();
     fwrite($tmpFile, $imagemStr);
     fseek($tmpFile, 0);
     $metadata = stream_get_meta_data($tmpFile);
-    return $metadata['uri'];
+    return ['file' => $tmpFile, 'uri' => $metadata['uri'], 'size' => filesize($metadata['uri'])];
   }
 
   /**
