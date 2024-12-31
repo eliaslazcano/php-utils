@@ -202,7 +202,7 @@ abstract class HttpHelper
   /**
    * Emite um conteudo JSON como resposta HTTP 200. Esta funcao encerra o script.
    * @param mixed $content Conteudo do JSON.
-   * @return void
+   * @return never-return
    */
   public static function emitirJson($content)
   {
@@ -215,7 +215,7 @@ abstract class HttpHelper
   /**
    * Emite a resposta HTTP com o numero desejado para o codigo HTTP. Esta funcao encerra o script.
    * @param int $httpCode Codigo HTTP.
-   * @return void
+   * @return never-return
    */
   public static function emitirHttp($httpCode = 200)
   {
@@ -231,7 +231,7 @@ abstract class HttpHelper
    * @param string $message Mensagem de erro.
    * @param int $errorId Identificador do erro.
    * @param mixed|null $extra Dados extras de qualquer formato.
-   * @return void
+   * @return never-return
    */
   public static function erroJson($httpCode = 400, $message = '', $errorId = 1, $extra = '')
   {
@@ -540,6 +540,7 @@ abstract class HttpHelper
    * @param int|string $contentLength
    * @param string $filename
    * @param bool $inline
+   * @return never-return
    */
   public static function downloadBinary($binaryString, $contentType, $contentLength, $filename, $inline = true)
   {
@@ -558,6 +559,7 @@ abstract class HttpHelper
    * @param string $contentType
    * @param string|null $filename
    * @param bool $inline
+   * @return never-return
    */
   public static function downloadFile($filePath, $contentType, $filename = null, $inline = true)
   {
