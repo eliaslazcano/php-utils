@@ -124,7 +124,7 @@ class GdUtils
       case 'image/png':
       case 'image/gif':
       case 'image/webp':
-        $imagemGd = imagecreatefromstring($conteudo);
+        $imagemGd = @imagecreatefromstring($conteudo);
         imagealphablending($imagemGd, false);
         imagesavealpha($imagemGd, true);
         break;
