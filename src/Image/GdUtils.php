@@ -85,6 +85,7 @@ class GdUtils
         break;
       case 'image/png':
         $resource = imagecreatefrompng($path);
+        if (!imageistruecolor($resource)) imagepalettetotruecolor($resource);
         imagealphablending($resource, false);
         imagesavealpha($resource, true);
         break;
