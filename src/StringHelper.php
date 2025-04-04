@@ -355,7 +355,7 @@ class StringHelper
    */
   public static function obterDiaDaSemana(?string $data = null): int
   {
-    if ($data === null) $date = date('Y-m-d');
+    if (!$data) $data = date('Y-m-d');
     $timestamp = strtotime($data); // Converte a data para timestamp
     return (int)date('w', $timestamp); // Obtem o numero do dia da semana (0 para domingo, 6 para sexta-feira)
   }
