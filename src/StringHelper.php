@@ -9,6 +9,7 @@ namespace Eliaslazcano\Helpers;
 
 use DateTime;
 use DateInterval;
+use Exception;
 
 class StringHelper
 {
@@ -19,7 +20,7 @@ class StringHelper
    * @param string $charset
    * @return string
    */
-  public static function toUpperCase($string, $trim = true, $charset = 'UTF-8')
+  public static function toUpperCase(string $string, bool $trim = true, string $charset = 'UTF-8'): string
   {
     if ($trim) $string = trim($string);
     return mb_strtoupper($string, $charset);
@@ -32,7 +33,7 @@ class StringHelper
    * @param string $charset
    * @return string
    */
-  public static function toLowerCase($string, $trim = true, $charset = 'UTF-8')
+  public static function toLowerCase(string $string, bool $trim = true, string $charset = 'UTF-8'): string
   {
     if ($trim) $string = trim($string);
     return mb_strtolower($string, $charset);
@@ -40,10 +41,10 @@ class StringHelper
 
   /**
    * Remove espacos sequencialmente repetidos da string.
-   * @param $string
+   * @param string $string
    * @return string
    */
-  public static function removeDuplicatedSpaces($string)
+  public static function removeDuplicatedSpaces(string $string): string
   {
     return preg_replace('/\s+/', ' ', $string);
   }
@@ -54,7 +55,7 @@ class StringHelper
    * @param string|null $replacer String que ira substituir os caracteres acentuados, null = troca pelo mesmo caractere sem acento.
    * @return string
    */
-  public static function removeAccents($string, $replacer = null)
+  public static function removeAccents(string $string, ?string $replacer = null): string
   {
     if ($replacer === null) $replacer = explode(' ', "a A e E i I o O u U n N c C");
     return preg_replace(
@@ -68,11 +69,11 @@ class StringHelper
 
   /**
    * Remove caracteres numericos da string.
-   * @param $string
-   * @param $separadosEmArray
+   * @param string $string
+   * @param bool $separadosEmArray
    * @return string|string[]
    */
-  public static function removeNumbers($string, $separadosEmArray = false)
+  public static function removeNumbers(string $string, bool $separadosEmArray = false)
   {
     $array = array();
     preg_match_all('/[^0-9]+/', $string, $array);
@@ -83,10 +84,10 @@ class StringHelper
 
   /**
    * Mantem na string apenas os numeros, letras (com acentos tambem) e espacos.
-   * @param $string
+   * @param string $string
    * @return string
    */
-  public static function removeSimbolos($string)
+  public static function removeSimbolos(string $string): string
   {
     return preg_replace("/[^a-zA-Z0-9\p{L}\s]/u", "", $string);
   }
@@ -97,7 +98,7 @@ class StringHelper
    * @param bool $separadosEmArray
    * @return string|string[]
    */
-  public static function extractNumbers($string, $separadosEmArray = false)
+  public static function extractNumbers(string $string, bool $separadosEmArray = false)
   {
     $array = array();
     preg_match_all('/[0-9]+/', $string, $array);
@@ -112,7 +113,7 @@ class StringHelper
    * @param bool $separadosEmArray
    * @return string|string[]
    */
-  public static function extractLetters($string, $separadosEmArray = false)
+  public static function extractLetters(string $string, bool $separadosEmArray = false)
   {
     $string = self::removeAccents($string);
     $array = array();
@@ -129,7 +130,7 @@ class StringHelper
    * @param bool $caseSensitive Comparacao sensivel a diferenca de caixa alta/baixa
    * @return bool
    */
-  public static function startsWith($fullString, $startString, $caseSensitive = true)
+  public static function startsWith(string $fullString, string $startString, bool $caseSensitive = true): bool
   {
     if (!$caseSensitive) {
       $fullString = self::toLowerCase($fullString, false);
@@ -146,7 +147,7 @@ class StringHelper
    * @param bool $caseSensitive Comparacao insensivel a diferenca de caixa alta/baixa
    * @return bool
    */
-  public static function endsWith($fullString, $endString, $caseSensitive = true)
+  public static function endsWith(string $fullString, string $endString, bool $caseSensitive = true): bool
   {
     if (!$caseSensitive) {
       $fullString = self::toLowerCase($fullString, false);
@@ -162,7 +163,7 @@ class StringHelper
    * @param string $cpf_cnpj
    * @return string
    */
-  public static function formatCpfCnpj($cpf_cnpj)
+  public static function formatCpfCnpj(string $cpf_cnpj): string
   {
     $digitos = self::extractNumbers($cpf_cnpj);
     $tamanho = strlen($digitos);
@@ -180,7 +181,8 @@ class StringHelper
    * @param bool $formatado Retorna com a mascara.
    * @return string
    */
-  public static function camuflarCpfCnpj($cpfCnpj, $formatado = true) {
+  public static function camuflarCpfCnpj(string $cpfCnpj, bool $formatado = true): string
+  {
     if (!$cpfCnpj) return $cpfCnpj;
     $x = self::extractNumbers($cpfCnpj);
     $tamanho = strlen($x);
@@ -201,19 +203,19 @@ class StringHelper
    * Converte uma data/datetime para SQL ou BR, invertendo a posicao do DIA com o ANO.
    * @param string $data Detecta automaticamente o caractere separador. Aceita ANO com 2 ou 4 digitos. Pode conter horas.
    * @param string|null $novo_separador Novo caractere que ira separar DIA, MES e ANO. Use null para manter o atual.
-   * @return string|false Data invertida. Em caso de falha retorna false.
+   * @return string|null Data invertida. Em caso de falha retorna false.
    */
-  public static function formatDate($data, $novo_separador = null)
+  public static function formatDate(string $data, ?string $novo_separador = null): ?string
   {
-    if (strlen($data) < 8) return false; //Tamanho minimo, para datas abreviadas como AA-MM-DD
+    if (strlen($data) < 8) return null; //Tamanho minimo, para datas abreviadas como AA-MM-DD
 
     //Tenta descobrir qual eh o caractere separador da data atualmente, pegando o primeiro caractere nao-numerico
     $separador = self::removeNumbers($data);
-    if (strlen($separador) === 0) return false;
+    if (strlen($separador) === 0) return null;
     $separador = $separador[0]; //pega o primeiro caractere
 
     $data_explodida = explode($separador, $data);
-    if (count($data_explodida) !== 3) return false;
+    if (count($data_explodida) !== 3) return null;
     if (!$novo_separador) $novo_separador = $separador;
 
     //Se contiver horas, devemos posiciona-la sempre no final da string
@@ -228,18 +230,18 @@ class StringHelper
   /**
    * Corrige a ausencia de digito zero nas datas, exemplo 9 para 09.
    * @param string $data Data em formato 00/00/00
-   * @return string|false Em caso de erro retorna false.
+   * @return string|null Em caso de erro retorna null.
    */
-  public static function fixDate($data)
+  public static function fixDate(string $data): ?string
   {
-    if (strlen($data) < 6) return false;
+    if (strlen($data) < 6) return null;
 
     $separador = self::removeNumbers($data);
-    if (strlen($separador) === 0) return false;
+    if (strlen($separador) === 0) return null;
     $separador = $separador[0];
 
     $data_explodida = explode($separador, $data);
-    if (count($data_explodida) !== 3) return false;
+    if (count($data_explodida) !== 3) return null;
     return (strlen($data_explodida[0]) === 1 ? '0' . $data_explodida[0] : $data_explodida[0]) . $separador . (strlen($data_explodida[1]) === 1 ? '0' . $data_explodida[1] : $data_explodida[1]) . $separador . (strlen($data_explodida[2]) === 1 ? '0' . $data_explodida[2] : $data_explodida[2]);
   }
 
@@ -248,7 +250,7 @@ class StringHelper
    * @param string $num Somente digitos numericos serao mantidos.
    * @return string Numero de telefone formatado (com mascara).
    */
-  public static function formatPhone($num)
+  public static function formatPhone(string $num): string
   {
     $num = self::extractNumbers($num);
     $tamanho = strlen($num);
@@ -271,7 +273,7 @@ class StringHelper
    * @param string $cep Somente digitos numericos serao considerados no algoritmo, o resto sera removido.
    * @return string CEP com mascara.
    */
-  public static function formatCep($cep)
+  public static function formatCep(string $cep): string
   {
     $num = self::extractNumbers($cep);
     if (!$num || strlen($num) !== 8) return $cep;
@@ -286,7 +288,7 @@ class StringHelper
    * - Se for negativo, inclui palavras a partir do final.
    * @return string O nome reduzido. Retorna uma string vazia se o nome completo for vazio.
    */
-  public static function reduzirNome($nomeCompleto, $palavrasAdicionais = -1)
+  public static function reduzirNome(string $nomeCompleto, int $palavrasAdicionais = -1): string
   {
     $nomeCompleto = trim($nomeCompleto); // Remova espaços extras no início e no final
     if (!$nomeCompleto) return ''; // Retorna vazio se o nome completo for vazio
@@ -313,7 +315,7 @@ class StringHelper
    * @param string $nomeCompleto Nome completo.
    * @return string Primeiro nome.
    */
-  public static function primeiroNome($nomeCompleto)
+  public static function primeiroNome(string $nomeCompleto): string
   {
     return self::reduzirNome($nomeCompleto, 0);
   }
@@ -323,7 +325,7 @@ class StringHelper
    * @param int|null $dia Opcional. Numero do dia da semana, 0 para Domingo ate 6 para Sábado. null para o dia atual.
    * @return string
    */
-  public static function diaDaSemana($dia = null)
+  public static function diaDaSemana(?int $dia = null): string
   {
     $dia_da_semana = intval($dia !== null ? $dia : date('w'));
     switch ($dia_da_semana) {
@@ -348,10 +350,11 @@ class StringHelper
 
   /**
    * Descobre o dia da semana a partir da data informada no parametro.
-   * @param string $data Data no formato AAAA-MM-DD, se nao fornecer considera o dia de hoje.
+   * @param string|null $data Data no formato AAAA-MM-DD, se nao fornecer considera o dia de hoje.
    * @return int 0 = Domingo, 6 = Sexta-Feira
    */
-  public static function obterDiaDaSemana($data = null) {
+  public static function obterDiaDaSemana(?string $data = null): int
+  {
     if ($data === null) $date = date('Y-m-d');
     $timestamp = strtotime($data); // Converte a data para timestamp
     return (int)date('w', $timestamp); // Obtem o numero do dia da semana (0 para domingo, 6 para sexta-feira)
@@ -362,9 +365,9 @@ class StringHelper
    * @param int|null $numero_do_mes Opcional. 1 para Janeiro ate 12 para Dezembro. null para o mes atual.
    * @return string
    */
-  public static function mesDoAno($numero_do_mes = null)
+  public static function mesDoAno(?int $numero_do_mes = null): string
   {
-    $numero_do_mes = $numero_do_mes ? intval($numero_do_mes) : intval(date('m'));
+    $numero_do_mes = $numero_do_mes ?: intval(date('m'));
     switch ($numero_do_mes) {
       case 1:
         return 'Janeiro';
@@ -400,7 +403,7 @@ class StringHelper
    * @param string $string A string original.
    * @return string A string nova.
    */
-  public static function utf8Encode($string)
+  public static function utf8Encode(string $string): string
   {
     return mb_detect_encoding($string, array('UTF-8', 'ISO-8859-1')) !== 'UTF-8' ? utf8_encode($string) : $string;
   }
@@ -410,7 +413,7 @@ class StringHelper
    * @param string $string A string original.
    * @return string A string nova.
    */
-  public static function utf8Decode($string)
+  public static function utf8Decode(string $string): string
   {
     return mb_detect_encoding($string, array('UTF-8', 'ISO-8859-1')) !== 'UTF-8' ? $string : utf8_decode($string);
   }
@@ -421,7 +424,7 @@ class StringHelper
    * @param string $subject O texto recipiente.
    * @return string
    */
-  public static function replaceLastOccurrence($search, $replace, $subject)
+  public static function replaceLastOccurrence(string $search, string $replace, string $subject): string
   {
     $pos = strrpos($subject, $search);
     if($pos !== false) $subject = substr_replace($subject, $replace, $pos, strlen($search));
@@ -433,7 +436,7 @@ class StringHelper
    * @param string|null $date - Data no formato AAAA-MM-DD. Se for null, assume o valor de date('Y-m-d') (data atual).
    * @return bool
    */
-  public static function ehDiaUtil($date = null)
+  public static function ehDiaUtil(?string $date = null): bool
   {
     if ($date === null) $date = date('Y-m-d');
     $dayOfWeek = date('N', strtotime($date));
@@ -445,7 +448,7 @@ class StringHelper
    * @param string|null $dataInicial - Data no formato AAAA-MM-DD. Se for null, assume o valor de date('Y-m-d') (data atual).
    * @return string|null - Resultado no formato AAAA-MM-DD. Em caso de erro retorna null.
    */
-  public static function proximoDiaUtil($dataInicial = null)
+  public static function proximoDiaUtil(?string $dataInicial = null): ?string
   {
     if ($dataInicial === null) $dataInicial = date('Y-m-d');
     $nextDay = date('Y-m-d', strtotime($dataInicial . ' +1 day'));
@@ -461,14 +464,14 @@ class StringHelper
    * @param string|null $dataInicial - Data no formato AAAA-MM-DD. Se for null, assume o valor de date('Y-m-d') (data atual).
    * @return string|null - Resultado no formato AAAA-MM-DD. Em caso de erro retorna null.
    */
-  public static function somarDiasCorridos($dias, $dataInicial = null)
+  public static function somarDiasCorridos(int $dias, ?string $dataInicial = null): ?string
   {
     if ($dataInicial === null) $dataInicial = date('Y-m-d');
     try {
       $datetime = new DateTime($dataInicial);
       $datetime->add(new DateInterval('P'.$dias.'D'));
       return $datetime->format('Y-m-d');
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
       return null;
     }
   }
@@ -478,8 +481,9 @@ class StringHelper
    * @param string $cpf
    * @return bool
    */
-  public static function validarCPF($cpf) {
-    $sanitizedCpf = preg_replace('/\D/', '', strval($cpf));
+  public static function validarCPF(string $cpf): bool
+  {
+    $sanitizedCpf = preg_replace('/\D/', '', $cpf);
     $invalidCpfPatterns = array(
       '00000000000',
       '11111111111',

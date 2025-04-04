@@ -16,30 +16,30 @@ class JwtHelper
   private $secret;
 
   /**
-   * @param mixed|null $payload
+   * @param array|null $payload
    * @param string|null $secret
    */
-  public function __construct($payload = null, $secret = null)
+  public function __construct(?array $payload = null, ?string $secret = null)
   {
     $this->payload = ($payload ?: array());
     $this->secret = ($secret ?: self::randomSecret());
   }
 
   /**
-   * @param array|mixed $payload
+   * @param array $payload
    * @return JwtHelper
    */
-  public function setPayload($payload)
+  public function setPayload(array $payload): JwtHelper
   {
     $this->payload = $payload;
     return $this;
   }
 
   /**
-   * @param string|null $secret
+   * @param string $secret
    * @return JwtHelper
    */
-  public function setSecret($secret)
+  public function setSecret(string $secret): JwtHelper
   {
     $this->secret = $secret;
     return $this;
@@ -49,7 +49,7 @@ class JwtHelper
    * Obtem a chave secreta
    * @return string|null
    */
-  public function getSecret()
+  public function getSecret(): ?string
   {
     return $this->secret;
   }
@@ -58,7 +58,7 @@ class JwtHelper
    * Obtem a representacao string do Json Web Token.
    * @return string
    */
-  public function getToken()
+  public function getToken(): string
   {
     $result = self::tokenCreate($this->payload, $this->secret);
     return $result['token'];
@@ -76,11 +76,11 @@ class JwtHelper
 
   /**
    * Cria um token. Voce pode fornecer o secret ou deixar a funcao gerar um para voce.
-   * @param array|object $payload Dados guardados no token. Evite dados sigilosos como senhas.
+   * @param array $payload Dados guardados no token. Evite dados sigilosos como senhas.
    * @param string|null $secret Um string secreta de sua escolha para futuramente validar a autenticidade do token. Se nao informado, sera gerada aleatoriamente.
    * @return array Array no formato: ['secret' => string, 'token' => string].
    */
-  public static function tokenCreate($payload = array(), $secret = null)
+  public static function tokenCreate(array $payload = array(), ?string $secret = null): array
   {
     $key = $secret ?: self::randomSecret();
 
@@ -107,7 +107,7 @@ class JwtHelper
    * @param string $secret A string que foi utilizada na criacao do JWT como secret.
    * @return bool Sucesso da validacao.
    */
-  public static function tokenValidate($token, $secret)
+  public static function tokenValidate(string $token, string $secret): bool
   {
     $part = explode('.', $token);
     $header = $part[0];
@@ -126,7 +126,7 @@ class JwtHelper
    * @param bool $associative O parse para PHP deve converter objetos para array associativo.
    * @return mixed
    */
-  public static function getPayload($token, $associative = false)
+  public static function getPayload(string $token, bool $associative = false)
   {
     $part = explode('.', $token);
     $payload = $part[1];
@@ -138,7 +138,7 @@ class JwtHelper
    * Gera uma chave aleatoria.
    * @return string
    */
-  private static function randomSecret()
+  private static function randomSecret(): string
   {
     return md5(uniqid(mt_rand().mt_rand(), true), false);
   }

@@ -37,7 +37,7 @@ abstract class HttpHelper
    * Default empty.
    * @param string|null $allow_origin Conteudo que vai no header 'Access-Control-Allow-Origin'.
    */
-  public static function setAllowOrigin($allow_origin)
+  public static function setAllowOrigin(?string $allow_origin)
   {
     self::$allow_origin = $allow_origin;
   }
@@ -47,7 +47,7 @@ abstract class HttpHelper
    * Default: 'Authorization, Content-Type, Cache-Control'.
    * @param string|null $allow_headers Conteudo que vai no header 'Access-Control-Allow-Headers'.
    */
-  public static function setAllowHeaders($allow_headers)
+  public static function setAllowHeaders(?string $allow_headers)
   {
     self::$allow_headers = $allow_headers;
   }
@@ -57,7 +57,7 @@ abstract class HttpHelper
    * Default: false.
    * @param bool $allow_credentials Valor para o header 'Access-Control-Allow-Credentials'.
    */
-  public static function setAllowCredentials($allow_credentials)
+  public static function setAllowCredentials(bool $allow_credentials)
   {
     self::$allow_credentials = $allow_credentials;
   }
@@ -67,7 +67,7 @@ abstract class HttpHelper
    * @param string $header Nome do header desejado.
    * @return string|null Valor do header, null caso o header nao esteja presente na requisicao.
    */
-  public static function getHeader($header)
+  public static function getHeader(string $header): ?string
   {
     $headerUpper = mb_strtoupper($header, 'UTF-8');
     $headerAlt = str_replace('-', '_', $headerUpper);
@@ -89,7 +89,7 @@ abstract class HttpHelper
    * Informa o metodo da requisicao HTTP.
    * @return string 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'.
    */
-  public static function getMethod()
+  public static function getMethod(): string
   {
     return $_SERVER['REQUEST_METHOD'];
   }
@@ -98,7 +98,7 @@ abstract class HttpHelper
    * Obtem os dados trafegados via FormData, util quando o metodo nao eh POST ou GET, pois o PHP nao trata dados de outros metodos.
    * @return array Dados parseados em array com indice = key do FormData.
    */
-  private static function getFormData()
+  private static function getFormData(): array
   {
     $dados = array();
     $raw_data = file_get_contents('php://input');
@@ -147,7 +147,7 @@ abstract class HttpHelper
    * Saiba se o conteudo recebido na requisicao atual eh um JSON.
    * @return bool true: JSON, false: NOT JSON.
    */
-  public static function isJson()
+  public static function isJson(): bool
   {
     $contentType = self::getHeader('Content-Type');
     if(!$contentType) return false;
@@ -158,7 +158,7 @@ abstract class HttpHelper
    * Informa se o metodo HTTP da requisicao eh GET.
    * @return bool
    */
-  public static function isGet()
+  public static function isGet(): bool
   {
     return self::getMethod() === 'GET';
   }
@@ -167,7 +167,7 @@ abstract class HttpHelper
    * Informa se o metodo HTTP da requisicao eh POST.
    * @return bool
    */
-  public static function isPost()
+  public static function isPost(): bool
   {
     return self::getMethod() === 'POST';
   }
@@ -176,7 +176,7 @@ abstract class HttpHelper
    * Informa se o metodo HTTP da requisicao eh PUT.
    * @return bool
    */
-  public static function isPut()
+  public static function isPut(): bool
   {
     return self::getMethod() === 'PUT';
   }
@@ -185,7 +185,7 @@ abstract class HttpHelper
    * Informa se o metodo HTTP da requisicao eh DELETE.
    * @return bool
    */
-  public static function isDelete()
+  public static function isDelete(): bool
   {
     return self::getMethod() === 'DELETE';
   }
@@ -194,7 +194,7 @@ abstract class HttpHelper
    * Informa se o metodo HTTP da requisicao eh PATCH.
    * @return bool
    */
-  public static function isPatch()
+  public static function isPatch(): bool
   {
     return self::getMethod() === 'PATCH';
   }
@@ -217,7 +217,7 @@ abstract class HttpHelper
    * @param int $httpCode Codigo HTTP.
    * @return never-return
    */
-  public static function emitirHttp($httpCode = 200)
+  public static function emitirHttp(int $httpCode = 200)
   {
     if (function_exists('http_response_code')) http_response_code($httpCode);
     else header("HTTP/1.1 $httpCode", true, $httpCode);
@@ -233,7 +233,7 @@ abstract class HttpHelper
    * @param mixed|null $extra Dados extras de qualquer formato.
    * @return never-return
    */
-  public static function erroJson($httpCode = 400, $message = '', $errorId = 1, $extra = '')
+  public static function erroJson(int $httpCode = 400, string $message = '', int $errorId = 1, $extra = '')
   {
     if (function_exists('http_response_code')) http_response_code($httpCode);
     else header("HTTP/1.1 $httpCode", true, $httpCode);
@@ -252,11 +252,11 @@ abstract class HttpHelper
    * Confere se a requisicao eh do metodo HTTP GET, caso contrario mata o script e responde HTTP 405.
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
-   * @param string $allowOrigin Origens aceitas, separadas por virgula.
-   * @param string $allowHeaders Cabecalhos aceitos, separados por virgula.
+   * @param string|null $allowOrigin Origens aceitas, separadas por virgula.
+   * @param string|null $allowHeaders Cabecalhos aceitos, separados por virgula.
    * @return bool Retorna o boleano se programou para nao emitir o erro.
    */
-  public static function validarGet($emitirErro = true, $allowOrigin = null, $allowHeaders = null)
+  public static function validarGet(bool $emitirErro = true, ?string $allowOrigin = null, ?string $allowHeaders = null): bool
   {
     header('Access-Control-Allow-Methods: GET, OPTIONS');
     if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
@@ -274,11 +274,11 @@ abstract class HttpHelper
    * Confere se a requisicao eh do metodo HTTP POST, caso contrario mata o script e responde HTTP 405.
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
-   * @param string $allowOrigin Origens aceitas, separadas por virgula.
-   * @param string $allowHeaders Cabecalhos aceitos, separados por virgula.
+   * @param string|null $allowOrigin Origens aceitas, separadas por virgula.
+   * @param string|null $allowHeaders Cabecalhos aceitos, separados por virgula.
    * @return bool Retorna o boleano se programou para nao emitir o erro.
    */
-  public static function validarPost($emitirErro = true, $allowOrigin = null, $allowHeaders = null)
+  public static function validarPost(bool $emitirErro = true, ?string $allowOrigin = null, ?string $allowHeaders = null): bool
   {
     header('Access-Control-Allow-Methods: POST, OPTIONS');
     if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
@@ -297,11 +297,11 @@ abstract class HttpHelper
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param string $metodo Metodo HTTP. Ex: 'GET','POST','PUT','DELETE'.
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
-   * @param string $allowOrigin Origens aceitas, separadas por virgula.
-   * @param string $allowHeaders Cabecalhos aceitos, separados por virgula.
+   * @param string|null $allowOrigin Origens aceitas, separadas por virgula.
+   * @param string|null $allowHeaders Cabecalhos aceitos, separados por virgula.
    * @return bool Retorna o boleano se programou para nao emitir o erro.
    */
-  public static function validarMetodo($metodo, $emitirErro = true, $allowOrigin = null, $allowHeaders = null)
+  public static function validarMetodo(string $metodo, bool $emitirErro = true, ?string $allowOrigin = null, ?string $allowHeaders = null): bool
   {
     header("Access-Control-Allow-Methods: $metodo, OPTIONS");
     if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
@@ -320,11 +320,11 @@ abstract class HttpHelper
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param string $metodos Metodos HTTP. Ex: ['GET','POST','PUT','DELETE'].
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
-   * @param string $allowOrigin Origens aceitas, separadas por virgula.
-   * @param string $allowHeaders Cabecalhos aceitos, separados por virgula.
+   * @param string|null $allowOrigin Origens aceitas, separadas por virgula.
+   * @param string|null $allowHeaders Cabecalhos aceitos, separados por virgula.
    * @return bool Retorna o boleano se programou para nao emitir o erro.
    */
-  public static function validarMetodos($metodos = array('GET', 'POST', 'PUT', 'DELETE'), $emitirErro = true, $allowOrigin = null, $allowHeaders = null)
+  public static function validarMetodos($metodos = ['GET', 'POST', 'PUT', 'DELETE'], bool $emitirErro = true, ?string $allowOrigin = null, ?string $allowHeaders = null): bool
   {
     if (gettype($metodos) !== 'array') self::erroJson(400, "validarMetodos() precisa receber um array de string no primeiro parametro");
     if (count($metodos) === 0) self::erroJson(400, "validarMetodos() precisa receber ao menos 1 metodo http no array do primeiro parametro");
@@ -352,7 +352,7 @@ abstract class HttpHelper
    * @param string $nome identificacao do parametro.
    * @return mixed|null
    */
-  public static function obterParametro($nome)
+  public static function obterParametro(string $nome)
   {
     if (self::isJson()) {
       $dados = json_decode(file_get_contents('php://input'), true);
@@ -384,7 +384,7 @@ abstract class HttpHelper
    * @param array $nomes identificacao dos parametros.
    * @return array ['parametro' => valor, ..]
    */
-  public static function obterParametros($nomes)
+  public static function obterParametros(array $nomes): array
   {
     $dados = array();
     foreach ($nomes as $n) {
@@ -400,7 +400,7 @@ abstract class HttpHelper
    * @param string $mensagemErro mensagem de erro quando o parametro nao existir.
    * @return mixed|null
    */
-  public static function validarParametro($nome, $mensagemErro = 'Faltam dados na requisicao')
+  public static function validarParametro(string $nome, string $mensagemErro = 'Faltam dados na requisicao')
   {
     if (self::isJson()) {
       $dados = json_decode(file_get_contents('php://input'), true);
@@ -433,7 +433,7 @@ abstract class HttpHelper
    * @param string $mensagemErro mensagem de erro quando o parametro nao existir.
    * @return array ['parametro' => valor, ..]
    */
-  public static function validarParametros($nomes, $mensagemErro = 'Faltam dados na requisicao')
+  public static function validarParametros(array $nomes, string $mensagemErro = 'Faltam dados na requisicao'): array
   {
     $dados = array();
     foreach ($nomes as $n) {
@@ -447,7 +447,7 @@ abstract class HttpHelper
    * @param bool $associativo O parse para PHP deve converter objetos para array associativo.
    * @return mixed|null Os dados do JSON parseados para variavel PHP
    */
-  public static function obterJson($associativo = false)
+  public static function obterJson(bool $associativo = false)
   {
     if (!self::isJson()) return null;
     return json_decode(file_get_contents('php://input'), $associativo);
@@ -459,7 +459,7 @@ abstract class HttpHelper
    * @param string $mensagemErro Mensagem do erro quando nao ha JSON no corpo da requisicao.
    * @return mixed Os dados do JSON parseados para variavel PHP
    */
-  public static function validarJson($associativo = false, $mensagemErro = 'Os dados nao estao no formato esperado')
+  public static function validarJson(bool $associativo = false, string $mensagemErro = 'Os dados nao estao no formato esperado')
   {
     if (!self::isJson()) self::erroJson(400, $mensagemErro, 0);
     return json_decode(file_get_contents('php://input'), $associativo);
@@ -467,22 +467,20 @@ abstract class HttpHelper
 
   /**
    * Obtem o IP Publico do cliente.
-   * @return string
+   * @return string|null
    */
-  public static function obterIp()
+  public static function obterIp(): ?string
   {
-    if (!empty($_SERVER['HTTP_X_REAL_IP'])) {
-      return $_SERVER['HTTP_X_REAL_IP'];
-    } else {
-      return $_SERVER['REMOTE_ADDR'];
-    }
+    if (!empty($_SERVER['HTTP_X_REAL_IP'])) return $_SERVER['HTTP_X_REAL_IP'];
+    elseif (!empty($_SERVER['REMOTE_ADDR'])) return $_SERVER['REMOTE_ADDR'];
+    return null;
   }
 
   /**
    * Obtem o IP Publico do cliente.
-   * @return string
+   * @return string|null
    */
-  public static function getIp()
+  public static function getIp(): ?string
   {
     return self::obterIp();
   }
@@ -492,7 +490,7 @@ abstract class HttpHelper
    * @param string $cabecalho Nome do cabecalho desejado.
    * @return string|null Valor do cabecalho, null caso o cabecalho nao esteja presente na requisicao.
    */
-  public static function obterCabecalho($cabecalho)
+  public static function obterCabecalho(string $cabecalho): ?string
   {
     return self::getHeader($cabecalho);
   }
@@ -523,9 +521,9 @@ abstract class HttpHelper
    * Realiza um var_dump() com quebra de linha [e encerra o script].
    * @param mixed $var A variavel para debugar.
    * @param bool $matar_script Matar o script apos o var_dump.
-   * @return void
+   * @return void|never-return
    */
-  public static function var_dump($var, $matar_script = true)
+  public static function var_dump($var, bool $matar_script = true)
   {
     echo "<pre>\n";
     var_dump($var);
@@ -537,12 +535,12 @@ abstract class HttpHelper
    * Realiza o download de um arquivo a partir de uma string binaria. Esta funcao encerra o script.
    * @param string $binaryString
    * @param string $contentType
-   * @param int|string $contentLength
+   * @param int $contentLength
    * @param string $filename
    * @param bool $inline
    * @return never-return
    */
-  public static function downloadBinary($binaryString, $contentType, $contentLength, $filename, $inline = true)
+  public static function downloadBinary(string $binaryString, string $contentType, int $contentLength, string $filename, bool $inline = true)
   {
     $filename = str_replace(' ', '_', trim($filename));
     $disposition = $inline ? 'inline' : 'attachment';
@@ -561,7 +559,7 @@ abstract class HttpHelper
    * @param bool $inline
    * @return never-return
    */
-  public static function downloadFile($filePath, $contentType, $filename = null, $inline = true)
+  public static function downloadFile(string $filePath, string $contentType, ?string $filename = null, bool $inline = true)
   {
     if ($filename) {
       $extensao = pathinfo($filePath, PATHINFO_EXTENSION);
@@ -588,12 +586,12 @@ abstract class HttpHelper
   /**
    * Executa uma instancia CURL e retorna varias informacoes de seu resultado.
    * @param resource $curl Instancia CURL criada por curl_init().
-   * @return array|false Em caso de falha retorna false. Sucesso retorna array no formato ['code' => int, 'type' => string, 'size' => int, 'body' => mixed, 'json' => bool].
+   * @return array|null Em caso de falha retorna false. Sucesso retorna array no formato ['code' => int, 'type' => string, 'size' => int, 'body' => mixed, 'json' => bool].
    */
-  private static function execCurl($curl)
+  private static function execCurl($curl): ?array
   {
     $response = curl_exec($curl);
-    if (curl_errno($curl)) return false;
+    if (curl_errno($curl)) return null;
 
     $contentType = curl_getinfo($curl, CURLINFO_CONTENT_TYPE);
     $httpStatus = curl_getinfo($curl, CURLINFO_HTTP_CODE);
@@ -616,9 +614,9 @@ abstract class HttpHelper
    * @param string $url Endpoint da requisicao.
    * @param array $headers Um array com headers HTTP a definir, no formato array('Content-type: text/plain', 'Content-length: 100').
    * @param int $timeout Tempo limite em segundos para receber a resposta da requisicao.
-   * @return array|false False em caso de erro. Array com colunas 'code','type','size','body','json'. Body em JSON ja eh entregue adaptado.
+   * @return array|null False em caso de erro. Array com colunas 'code','type','size','body','json'. Body em JSON ja eh entregue adaptado.
    */
-  public static function curlGet($url, $headers = array(), $timeout = 30)
+  public static function curlGet(string $url, array $headers = [], int $timeout = 30): ?array
   {
     $curl = curl_init();
     curl_setopt_array($curl, array(
@@ -645,9 +643,9 @@ abstract class HttpHelper
    * @param array|string|null $data Para formdata use array associativo com chave => valor. Para JSON use uma string.
    * @param array $headers Um array com headers HTTP a definir, no formato array('Content-type: text/plain', 'Content-length: 100').
    * @param int $timeout Tempo limite em segundos para receber a resposta da requisicao.
-   * @return array|false False em caso de erro. Array com colunas 'code','type','size','body','json'. Body em JSON ja eh entregue adaptado.
+   * @return array|null False em caso de erro. Array com colunas 'code','type','size','body','json'. Body em JSON ja eh entregue adaptado.
    */
-  public static function curlPost($url, $data = null, $headers = array(), $timeout = 30)
+  public static function curlPost(string $url, $data = null, array $headers = [], int $timeout = 30): ?array
   {
     $headers[] = is_array($data) ? 'Content-Type: multipart/form-data' : 'Content-Type: application/json; charset=utf-8';
     $curl = curl_init();
@@ -677,7 +675,7 @@ abstract class HttpHelper
    * @param string $arquivo Nome do arquivo de texto.
    * @return string|null Retorna null em caso de sucesso, string para mensagem de erro.
    */
-  public static function gravarLog($texto, $diretorio, $arquivo = 'log.txt')
+  public static function gravarLog(string $texto, string $diretorio, string $arquivo = 'log.txt'): ?string
   {
     $diretorio = rtrim($diretorio, '/');
     if (!file_exists($diretorio)) {
@@ -700,7 +698,7 @@ abstract class HttpHelper
    * @param string $noRouteMessage Se a rota nao existir, e nao houver um arquivo 404.php, esta mensagem eh retornada em JSON com erro 404.
    * @return void
    */
-  public static function useRouter($mainDir, $logFile = null, $noRouteMessage = 'Nenhum webservice corresponde a solicitacao')
+  public static function useRouter(string $mainDir, ?string $logFile = null, string $noRouteMessage = 'Nenhum webservice corresponde a solicitacao')
   {
     self::applyCorsHeaders();
     if ($logFile) {
@@ -712,7 +710,7 @@ abstract class HttpHelper
     if (self::getMethod() === 'OPTIONS') die();
 
     $mainDir = rtrim($mainDir, '/');
-    $url = isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : (isset($_SERVER['ORIG_PATH_INFO']) ? $_SERVER['ORIG_PATH_INFO'] : null);
+    $url = $_SERVER['PATH_INFO'] ?? ($_SERVER['ORIG_PATH_INFO'] ?? null);
     $caminhoLocal = $url ? trim($url,'/') : null;
 
     if ($caminhoLocal && file_exists("$mainDir/$caminhoLocal.php")) {

@@ -16,7 +16,7 @@ class ArrayHelper
    * @param bool $resetIndexes Refaz os indices do array (com array_values). False = mantem os indices.
    * @return array
    */
-  public static function filter($array, $function, $resetIndexes = false)
+  public static function filter(array $array, callable $function, bool $resetIndexes = false): array
   {
     $filtered = array_filter($array, $function);
     return $resetIndexes ? array_values($filtered) : $filtered;
@@ -28,7 +28,7 @@ class ArrayHelper
    * @param callback $function Funcao que percorre o array, fornece o item no primeiro parametro e espera um retorno do novo valor substituto.
    * @return array O novo array.
    */
-  public static function map($array, $function)
+  public static function map(array $array, callable $function): array
   {
     return array_map($function, $array);
   }
@@ -39,7 +39,7 @@ class ArrayHelper
    * @param callback $function - Funcao de filtro, percorre o array fornecendo o item no primeiro parametro e espera um retorno boleano.
    * @return mixed|null - Valor encontrado dentro do array, null caso nao tenha encontrado.
    */
-  public static function find($array, $function)
+  public static function find(array $array, callable $function)
   {
     $filtered = self::filter($array, $function, true);
     return count($filtered) > 0 ? $filtered[0] : null;
@@ -51,7 +51,7 @@ class ArrayHelper
    * @param callback $function - Funcao de filtro, percorre o array fornecendo o item no primeiro parametro e espera um retorno boleano.
    * @return bool - true quando algum elemento satisfaz o filtro, do contrario false.
    */
-  public static function some($array, $function)
+  public static function some(array $array, callable $function): bool
   {
     $filtered = self::filter($array, $function, true);
     return count($filtered) > 0;
@@ -63,7 +63,8 @@ class ArrayHelper
    * @param bool $preserveIndex Mantem os indices do array.
    * @return array O novo array.
    */
-  public static function removeEmptyItems($array, $preserveIndex = false) {
+  public static function removeEmptyItems(array $array, bool $preserveIndex = false): array
+  {
     $resultado = array_filter($array, function ($item) { return !empty($item); });
     return $preserveIndex ? $resultado : array_values($resultado);
   }
@@ -74,7 +75,8 @@ class ArrayHelper
    * @param bool $preserveIndex Mantem os indices do array.
    * @return array O novo array.
    */
-  public static function removeNullItems($array, $preserveIndex = false) {
+  public static function removeNullItems(array $array, bool $preserveIndex = false): array
+  {
     $resultado = array_filter($array, function ($item) { return $item !== null; });
     return $preserveIndex ? $resultado : array_values($resultado);
   }
@@ -85,7 +87,8 @@ class ArrayHelper
    * @param bool $preserveIndex Mantem os indices do array.
    * @return array O novo array.
    */
-  public static function removeDuplicateItems($array, $preserveIndex = false) {
+  public static function removeDuplicateItems(array $array, bool $preserveIndex = false): array
+  {
     $resultado = array_unique($array);
     return $preserveIndex ? $resultado : array_values($resultado);
   }
@@ -96,7 +99,7 @@ class ArrayHelper
    * @param array<string>|null $columns Nome das colunas que serao convertidas (index do segundo array dimensional).
    * @return array<array<string,float>> O novo array.
    */
-  public static function columnsStringToNumber($array, $columns = null)
+  public static function columnsStringToNumber(array $array, ?array $columns = null): array
   {
     foreach ($array as $line => $lineValue) {
       foreach ($lineValue as $column => $columnValue) {
@@ -114,7 +117,7 @@ class ArrayHelper
    * @param array<string>|null $columns Nome das colunas que serao convertidas (index do segundo array dimensional).
    * @return array<array<string,bool>> O novo array.
    */
-  public static function columnsStringToBool($array, $columns = null)
+  public static function columnsStringToBool(array $array, ?array $columns = null): array
   {
     foreach ($array as $line => $lineValue) {
       foreach ($lineValue as $column => $columnValue) {

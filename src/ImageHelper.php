@@ -13,9 +13,10 @@ class ImageHelper
   /**
    * Converte a string binaria da imagem para string base64.
    * @param string $string String binaria.
+   * @param string $mime Tipo do arquivo.
    * @return string String base64.
    */
-  static function convertStringToBase64($string, $mime)
+  static function convertStringToBase64(string $string, string $mime): string
   {
     return "data:$mime;base64,".base64_encode($string);
   }
@@ -25,7 +26,7 @@ class ImageHelper
    * @param string $base64 String base64.
    * @return array Array no formato ['mime' => String, 'content' => String].
    */
-  static function convertBase64ToString($base64)
+  static function convertBase64ToString(string $base64): array
   {
     $pos_x = strpos($base64, 'data:') + 5;
     $pos_y = strpos($base64, ';base64');
@@ -38,10 +39,10 @@ class ImageHelper
    * Converte uma imagem em GD para string binaria.
    * @param resource $gdResource Imagem em GD.
    * @param int $imageType Constante IMAGETYPE_JPEG ou IMAGETYPE_PNG
-   * @param int $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
+   * @param int|null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
    * @return false|string String binaria. Em caso de erro sera false.
    */
-  static function convertGdToString($gdResource, $imageType = IMAGETYPE_JPEG, $quality = null)
+  static function convertGdToString($gdResource, int $imageType = IMAGETYPE_JPEG, ?int $quality = null)
   {
     ob_start();
     if ($imageType === IMAGETYPE_JPEG) imagejpeg($gdResource, null, $quality ?: 90);
@@ -56,7 +57,7 @@ class ImageHelper
    * @param int[] $alphaColor Cor RBG que ira substituir a cor alpha (transparente). Default white (branco).
    * @return string String binaria da imagem JPEG.
    */
-  static function convertFormatPngToJpeg($string, $quality = 90, $alphaColor = array(255,255,255))
+  static function convertFormatPngToJpeg(string $string, int $quality = 90, array $alphaColor = array(255,255,255)): string
   {
     $image = imagecreatefromstring($string);
     $bg = imagecreatetruecolor(imagesx($image), imagesy($image));
@@ -78,7 +79,7 @@ class ImageHelper
    * @param string $filename Caminho da imagem incluindo seu nome e extensao.
    * @return bool Indica se a operacao foi bem sucedida.
    */
-  static function createFileFromBase64($base64, $filename)
+  static function createFileFromBase64(string $base64, string $filename): bool
   {
     $resource = fopen($filename,'wb');
     $image = self::convertBase64ToString($base64);
@@ -93,7 +94,7 @@ class ImageHelper
    * @param string $filename Caminho da imagem incluindo seu nome e extensao.
    * @return bool Indica se a operacao foi bem sucedida.
    */
-  static function createFileFromString($string, $filename)
+  static function createFileFromString(string $string, string $filename): bool
   {
     $resource = fopen($filename,'wb');
     $success = fwrite($resource, $string);
@@ -149,7 +150,7 @@ class ImageHelper
    * @param int $rgb Pixels com nivel de RGB (claridade) >= a este serao convertidos em cor alpha, aceita valores entre 1 e 255.
    * @return resource Imagem em GD.
    */
-  static function fillLightColorToAlpha($image, $rgb = 240)
+  static function fillLightColorToAlpha($image, int $rgb = 240)
   {
     if (imageistruecolor($image)) imagetruecolortopalette($image, false, 256);
     for ($i = $rgb; $i < 255; $i++) {
@@ -167,7 +168,7 @@ class ImageHelper
    * @param int $rgb Pixels com nivel de RGB (claridade) >= a este serao convertidos em cor branco, aceita valores entre 1 e 255.
    * @return resource Imagem em GD.
    */
-  static function fillLightColorToWhite($image, $rgb = 240)
+  static function fillLightColorToWhite($image, int $rgb = 240)
   {
     if (imageistruecolor($image)) imagetruecolortopalette($image, false, 256);
     for ($i = $rgb; $i < 255; $i++) {
@@ -186,7 +187,7 @@ class ImageHelper
    * @param int $blue 0 a 255, intensidade da cor azul do RGB.
    * @return resource|false Imagem em GD. false em caso de erro.
    */
-  static function fillColorAlphaToRgb($gdImage, $red = 255, $green = 255, $blue = 255)
+  static function fillColorAlphaToRgb($gdImage, int $red = 255, int $green = 255, int $blue = 255)
   {
     $width = imagesx($gdImage);
     $height = imagesy($gdImage);
@@ -213,7 +214,7 @@ class ImageHelper
    * @param int $lightTolerance Pixels com nivel de RGB (claridade) >= a este serao convertidos em cor alpha (transparente), aceita valores entre 1 e 255.
    * @return resource
    */
-  static function smartSignatureCleanup($gdImage, $lightTolerance = 240)
+  static function smartSignatureCleanup($gdImage, int $lightTolerance = 240)
   {
     $gdImage = self::fillColorAlphaToWhite($gdImage); //remove qualquer existencia de cor alpha
     $gdImage = self::fillLightColorToWhite($gdImage, $lightTolerance); //cores proximas ao branco se tornam branco absoluto
@@ -228,10 +229,10 @@ class ImageHelper
    * @param int $maxHeight Altura maxima em pixels.
    * @param int|null $imageType Uma das constantes IMAGETYPE_JPEG ou IMAGETYPE_PNG. Para usar o tipo original da imagem deixe null.
    * @param bool $allowEnlarge Permite ampliar a imagem se for necessario, para um tamanho maior que a origem.
-   * @param null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
+   * @param int|null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
    * @return array<string, mixed>|null Array no formato ['data' => String, 'width' => Int, 'height' => Int].
    */
-  static function resizeToBestFit($filename, $maxWidth, $maxHeight, $imageType = null, $allowEnlarge = false, $quality = null)
+  static function resizeToBestFit(string $filename, int $maxWidth, int $maxHeight, ?int $imageType = null, bool $allowEnlarge = false, ?int $quality = null): ?array
   {
     try {
       $image = new ImageResize($filename);
@@ -251,10 +252,10 @@ class ImageHelper
    * @param int $maxHeight Altura maxima em pixels.
    * @param int|null $imageType Uma das constantes IMAGETYPE_JPEG ou IMAGETYPE_PNG. Para usar o tipo original da imagem deixe null.
    * @param bool $allowEnlarge Permite ampliar a imagem se for necessario, para um tamanho maior que a origem.
-   * @param null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
+   * @param int|null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
    * @return array<string, mixed>|null Array no formato ['data' => String, 'width' => Int, 'height' => Int].
    */
-  static function resizeToBestFitString($string, $maxWidth, $maxHeight, $imageType = null, $allowEnlarge = false, $quality = null)
+  static function resizeToBestFitString(string $string, int $maxWidth, int $maxHeight, ?int $imageType = null, bool $allowEnlarge = false, ?int $quality = null): ?array
   {
     $tmpFile = tmpfile();
     if (!$tmpFile) return null;
@@ -273,10 +274,10 @@ class ImageHelper
    * @param int $maxHeight Altura maxima em pixels.
    * @param int|null $imageType Uma das constantes IMAGETYPE_JPEG ou IMAGETYPE_PNG.
    * @param bool $allowEnlarge Permite ampliar a imagem se for necessario, para um tamanho maior que a origem.
-   * @param null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
+   * @param int|null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
    * @return array<string, mixed>|null Array no formato ['data' => String, 'width' => Int, 'height' => Int].
    */
-  static function resizeToBestFitGd($gdImage, $maxWidth, $maxHeight, $imageType, $allowEnlarge = false, $quality = null)
+  static function resizeToBestFitGd($gdImage, int $maxWidth, int $maxHeight, ?int $imageType, bool $allowEnlarge = false, ?int $quality = null): ?array
   {
     $tmpFile = tmpfile();
     if (!$tmpFile) return null;
@@ -295,10 +296,10 @@ class ImageHelper
    * @param int $height Altura em pixels.
    * @param int|null $imageType Uma das constantes IMAGETYPE_JPEG ou IMAGETYPE_PNG. Para usar o tipo original da imagem deixe null.
    * @param bool $allowEnlarge Permite ampliar a imagem se for necessario, para um tamanho maior que a origem.
-   * @param null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
+   * @param int|null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
    * @return array<string, mixed>|null Array no formato ['data' => String, 'width' => Int, 'height' => Int].
    */
-  static function cropFile($filename, $width, $height, $imageType = null, $allowEnlarge = false, $quality = null)
+  static function cropFile(string $filename, int $width, int $height, ?int $imageType = null, bool $allowEnlarge = false, ?int $quality = null): ?array
   {
     try {
       $image = new ImageResize($filename);
@@ -318,10 +319,10 @@ class ImageHelper
    * @param int $height Altura em pixels.
    * @param int|null $imageType Uma das constantes IMAGETYPE_JPEG ou IMAGETYPE_PNG. Para usar o tipo original da imagem deixe null.
    * @param bool $allowEnlarge Permite ampliar a imagem se for necessario, para um tamanho maior que a origem.
-   * @param null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
+   * @param int|null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
    * @return array<string, mixed>|null Array no formato ['data' => String, 'width' => Int, 'height' => Int].
    */
-  static function cropString($string, $width, $height, $imageType = null, $allowEnlarge = false, $quality = null)
+  static function cropString(string $string, int $width, int $height, ?int $imageType = null, bool $allowEnlarge = false, ?int $quality = null): ?array
   {
     $tmpFile = tmpfile();
     if (!$tmpFile) return null;
@@ -340,10 +341,10 @@ class ImageHelper
    * @param int $height Altura em pixels.
    * @param int|null $imageType Uma das constantes IMAGETYPE_JPEG ou IMAGETYPE_PNG. Para usar o tipo original da imagem deixe null.
    * @param bool $allowEnlarge Permite ampliar a imagem se for necessario, para um tamanho maior que a origem.
-   * @param null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
+   * @param int|null $quality Para JPEG: 0 (pior qualidade, arquivo pequeno) ate 100 (melhor qualidade, arquivo grande), padrao 90. Para PNG: 0 (sem compressao) ate 9 (muita compressao).
    * @return array<string, mixed>|null Array no formato ['data' => String, 'width' => Int, 'height' => Int].
    */
-  static function cropGd($gdImage, $width, $height, $imageType, $allowEnlarge = false, $quality = null)
+  static function cropGd($gdImage, int $width, int $height, ?int $imageType, bool $allowEnlarge = false, ?int $quality = null): ?array
   {
     $tmpFile = tmpfile();
     if (!$tmpFile) return null;

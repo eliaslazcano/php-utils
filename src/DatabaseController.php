@@ -19,7 +19,7 @@ abstract class DatabaseController
   private $conexao;
   public $forceColunasCaixaBaixa = false;
 
-  public function __construct(PDO $conn = null, $persistent = true)
+  public function __construct(?PDO $conn = null, bool $persistent = true)
   {
     if ($conn) $this->conexao = $conn;
     else {
@@ -50,7 +50,7 @@ abstract class DatabaseController
    * @param string $mensagem Mensagem para o usuario final.
    * @param string|null $dadosLog Dados para eventualmente armazenar em um arquivo de log
    */
-  protected function aoFalhar(string $mensagem, string $dadosLog = null)
+  protected function aoFalhar(string $mensagem, ?string $dadosLog = null)
   {
     trigger_error($mensagem, E_USER_ERROR);
   }
@@ -233,7 +233,7 @@ abstract class DatabaseController
    * @param string $nome_do_arquivo
    * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
    */
-  public function exportarCsv_deTabela(string $tabela, array $colunas = array(), bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', string $diretorio = null)
+  public function exportarCsv_deTabela(string $tabela, array $colunas = array(), bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
   {
     $str_colunas = $colunas ? implode(', ', $colunas) : '*';
     $this->exportarCsv_deQuery("SELECT $str_colunas FROM $tabela", $incluir_cabecalho, $nome_do_arquivo, $diretorio);
@@ -246,7 +246,7 @@ abstract class DatabaseController
    * @param string $nome_do_arquivo
    * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
    */
-  public function exportarCsv_deQuery(string $query, bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', string $diretorio = null)
+  public function exportarCsv_deQuery(string $query, bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
   {
     $resultado = $this->query($query);
     self::exportarCsv_deArray($resultado, $incluir_cabecalho, $nome_do_arquivo, $diretorio);
@@ -259,7 +259,7 @@ abstract class DatabaseController
    * @param string $nome_do_arquivo
    * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
    */
-  public static function exportarCsv_deArray(array $array, bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', string $diretorio = null)
+  public static function exportarCsv_deArray(array $array, bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
   {
     if (!$diretorio) {
       header('Content-Type: text/csv');

@@ -45,7 +45,7 @@ class ClienteHttp
    * @param array $headers Cabeçalhos da requisição.
    * @return RespostaHttp Um objeto contendo informações da resposta HTTP.
    */
-  public function send(string $method, string $endpoint, string $body = null, array $headers = []): RespostaHttp
+  public function send(string $method, string $endpoint, ?string $body = null, array $headers = []): RespostaHttp
   {
     $endpoint = ltrim($endpoint, '/');
     $url = $this->baseUrl . '/' . $endpoint;
