@@ -56,4 +56,60 @@ class Utils
     }
     return $arquivos;
   }
+
+  /**
+   * Atraves do texto recebido, qualquer URL mencionada em seu conteúdo é convertida em um link clicável HTML.
+   * @param string $texto Conteúdo original.
+   * @return string Conteúdo adaptado.
+   */
+  public static function transformarUrlsEmLinks(string $texto): string
+  {
+    // Escapar HTML para evitar conflito com tags existentes
+    $texto = htmlspecialchars($texto, ENT_QUOTES, 'UTF-8');
+
+    // Expressão regular aprimorada para capturar URLs sem pontuação final
+    $padrao = '/\b(https?:\/\/[^\s<>"\'\])]+[^\s<>"\'\]),.?!])/i';
+
+    // Substituir URLs por links clicáveis
+    return preg_replace_callback($padrao, function ($matches) {
+      $url = $matches[1];
+      return '<a href="' . $url . '" target="_blank" rel="noopener noreferrer">' . $url . '</a>';
+    }, $texto);
+  }
+
+  /**
+   * Executa um bloco de código (callback), retornando um valor padrão se ele disparar uma exceção.
+   * ```
+   * $endereco = Utils::throwSuprimido(fn() => obterEndereco('Elias Neto'));
+   * ```
+   * @param callable $callback - Função callback que pode lançar exceções.
+   * @param $retornoAoFalhar - Valor retornado em caso de exceção. (Padrão: null)
+   * @return mixed Resultado do callback ou $retornoAoFalhar em caso de exceção.
+   */
+  public static function throwSuprimido(callable $callback, $retornoAoFalhar = null)
+  {
+    try {
+      return $callback();
+    } catch (Exception $e) {
+      return $retornoAoFalhar;
+    }
+  }
+
+  /**
+   * Executa um bloco de código (callback), se ele disparar uma exceção será emitida a resposta HTTP 400 em JSON com a mensagem da falha.
+   * ```
+   * $endereco = Utils::throwSuprimido(fn() => obterEndereco('Elias Neto'));
+   * ```
+   * @param callable $callback - Função callback que pode lançar exceções.
+   * @param string|null $msg - Mensagem de erro exibida no lugar da padrão (presente no JSON). Se não informar será usada a mensagem da Exception.
+   * @return mixed Resultado do callback.
+   */
+  public static function throwErroJson(callable $callback, string $msg = null)
+  {
+    try {
+      return $callback();
+    } catch (Exception $e) {
+      HttpHelper::erroJson(400, $msg ?: $e->getMessage());
+    }
+  }
 }
