@@ -104,7 +104,7 @@ class Utils
    * @param string|null $msg - Mensagem de erro exibida no lugar da padrão (presente no JSON). Se não informar será usada a mensagem da Exception.
    * @return mixed Resultado do callback.
    */
-  public static function throwErroJson(callable $callback, string $msg = null)
+  public static function throwErroJson(callable $callback, ?string $msg = null)
   {
     try {
       return $callback();
