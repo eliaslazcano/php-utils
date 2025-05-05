@@ -259,7 +259,7 @@ abstract class DatabaseController
    * @param string $nome_do_arquivo
    * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
    */
-  public static function exportarCsv_deArray(array $array, bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
+  public static function exportarCsv_deArray(array $array, bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null, string $separador = ';')
   {
     if (!$diretorio) {
       header('Content-Type: text/csv');
@@ -269,13 +269,13 @@ abstract class DatabaseController
     }
     $resource = fopen($diretorio ? ($diretorio.'/'.$nome_do_arquivo) : 'php://output', 'w');
     if ($incluir_cabecalho) {
-      if (is_array($array[0])) fputcsv($resource, array_keys($array[0]));
-      else fputcsv($resource, array_keys($array));
+      if (is_array($array[0])) fputcsv($resource, array_keys($array[0]), $separador);
+      else fputcsv($resource, array_keys($array), $separador);
     }
     if (is_array($array[0])) {
-      foreach ($array as $linha) fputcsv($resource, $linha);
+      foreach ($array as $linha) fputcsv($resource, $linha, $separador);
     } else {
-      fputcsv($resource, $array);
+      fputcsv($resource, $array, $separador);
     }
     fclose($resource);
     if (!$diretorio) die();
