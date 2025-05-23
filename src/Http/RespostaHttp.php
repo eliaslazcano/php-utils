@@ -17,6 +17,8 @@ class RespostaHttp
   public $type;
   /** @var string|null O corpo da resposta. */
   public $response;
+  /** @var string|null O nome do arquivo obtido (filtrado do header Content-Disposition). */
+  public $filename = null;
 
   /**
    * @param string|null $error Mensagem de erro quando houver.

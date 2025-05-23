@@ -53,11 +53,12 @@ class ClienteHttp
     $headers[] = 'Cache-Control: no-cache';
     if ($body && in_array($method, array('POST','PUT','PATCH'))) $headers[] = 'Content-Type: application/json';
 
-    //CONFIGURA O CURL
+    // Configura o CURL
     $curl = curl_init();
     curl_setopt_array($curl, [
       CURLOPT_URL => $url,
       CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_HEADER => true, // ← IMPORTANTE
       CURLOPT_CUSTOMREQUEST => $method,
       CURLOPT_HTTPHEADER => $headers,
       CURLOPT_FOLLOWLOCATION => true,
@@ -67,25 +68,31 @@ class ClienteHttp
       CURLOPT_SSL_VERIFYHOST => 0,
       CURLOPT_SSL_VERIFYPEER => 0,
     ]);
-    if ($body) {
-      switch ($method) {
-        case 'POST':
-        case 'PUT':
-        case 'PATCH':
-          curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
-          break;
-      }
-    }
 
-    //EXECUTA O CURL
-    $return = array();
-    $return['response'] = curl_exec($curl);
-    $return['error'] = curl_error($curl) ?: null;
-    $return['code'] = !$return['error'] ? curl_getinfo($curl, CURLINFO_HTTP_CODE) : null;
-    $return['type'] = !$return['error'] ? curl_getinfo($curl, CURLINFO_CONTENT_TYPE) : null;
+    if ($body && in_array($method, ['POST', 'PUT', 'PATCH'])) curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
+
+    // Executa
+    $response = curl_exec($curl);
+    $error = curl_error($curl) ?: null;
+    $code = !$error ? curl_getinfo($curl, CURLINFO_HTTP_CODE) : null;
+    $type = !$error ? curl_getinfo($curl, CURLINFO_CONTENT_TYPE) : null;
+
+    $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+    $header = substr($response, 0, $headerSize);
+    $body = substr($response, $headerSize);
+
     curl_close($curl);
 
-    $resposta = new RespostaHttp($url, $return['error'], $return['code'], $return['type'], $return['response']);
+    // Captura o nome do arquivo, se presente
+    $filename = null;
+    if (preg_match('/Content-Disposition:.*filename=["\']?([^"\';]+)["\']?/i', $header, $matches)) {
+      $filename = $matches[1];
+    }
+
+    // Cria a resposta e insere o filename, se houver
+    $resposta = new RespostaHttp($url, $error, $code, $type, $body);
+    if ($filename) $resposta->filename = $filename;
+
     return $this->interceptarResposta($resposta);
   }
 }
