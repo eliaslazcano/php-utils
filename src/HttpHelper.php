@@ -25,7 +25,7 @@ abstract class HttpHelper
    * @param bool|null $headerAllowCredentials null para utilizar o valor padrão da classe.
    * @return void
    */
-  private static function applyCorsHeaders(string $headerAllowOrigin = null, string $headerAllowHeaders = null, ?bool $headerAllowCredentials = null)
+  private static function applyCorsHeaders(?string $headerAllowOrigin = null, ?string $headerAllowHeaders = null, ?bool $headerAllowCredentials = null)
   {
     if ($headerAllowOrigin === null) $headerAllowOrigin = self::$headerAllowOrigin;
     if ($headerAllowHeaders === null) $headerAllowHeaders = self::$headerAllowHeaders;
