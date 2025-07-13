@@ -2,68 +2,68 @@
 /**
  * Oferece ferramentas para manipular facilmente a requisicao HTTP.
  * @author Elias Lazcano Castro Neto
- * @since 5.3
+ * @since 7.1
  */
 
 namespace Eliaslazcano\Helpers;
 
 abstract class HttpHelper
 {
-  /**
-   * @var string|null Repostas HTTP emitidas por esta classe HttpHelper devem mencionar isso no header 'Access-Control-Allow-Origin'. Default empty.
-   */
-  protected static $allow_origin = null;
+  /** @var string|null Repostas HTTP serão emitidas por padrão com este valor no header 'Access-Control-Allow-Origin'. */
+  protected static $headerAllowOrigin = '*';
+
+  /** @var string|null Repostas HTTP serão emitidas por padrão com este valor no header 'Access-Control-Allow-Headers'. */
+  protected static $headerAllowHeaders = 'Accept, Authorization, Content-Type, Cache-Control, Content-Disposition';
+
+  /** @var bool Repostas HTTP serão emitidas por padrão com este valor no header 'Access-Control-Allow-Credentials'. */
+  protected static $headerAllowCredentials = false;
 
   /**
-   * @var string|null Repostas HTTP emitidas por esta classe HttpHelper devem mencionar isso no header 'Access-Control-Allow-Headers'. Default: 'Authorization, Content-Type, Cache-Control'.
+   * Aplica os header's CORS: Access-Control-Allow-Origin, Access-Control-Allow-Headers e Access-Control-Allow-Credentials.
+   * @param string|null $headerAllowOrigin null para utilizar o valor padrão da classe.
+   * @param string|null $headerAllowHeaders null para utilizar o valor padrão da classe.
+   * @param bool|null $headerAllowCredentials null para utilizar o valor padrão da classe.
+   * @return void
    */
-  protected static $allow_headers = 'Accept, Authorization, Cache-Control, Content-Type, Content-Disposition';
-
-  /**
-   * @var bool Repostas HTTP emitidas por esta classe HttpHelper devem mencionar o header 'Access-Control-Allow-Credentials: true'. Default: false.
-   */
-  protected static $allow_credentials = false;
-
-  private static function applyCorsHeaders()
+  private static function applyCorsHeaders(string $headerAllowOrigin = null, string $headerAllowHeaders = null, ?bool $headerAllowCredentials = null)
   {
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    if (self::$allow_origin) header('Access-Control-Allow-Origin: ' . self::$allow_origin);
-    if (self::$allow_headers) header('Access-Control-Allow-Headers: ' . self::$allow_headers);
-    if (self::$allow_credentials) header('Access-Control-Allow-Credentials: true');
+    if ($headerAllowOrigin === null) $headerAllowOrigin = self::$headerAllowOrigin;
+    if ($headerAllowHeaders === null) $headerAllowHeaders = self::$headerAllowHeaders;
+    if ($headerAllowCredentials === null) $headerAllowCredentials = self::$headerAllowCredentials;
+    if ($headerAllowOrigin) header('Access-Control-Allow-Origin: ' . self::$headerAllowOrigin);
+    if ($headerAllowHeaders) header('Access-Control-Allow-Headers: ' . self::$headerAllowHeaders);
+    if ($headerAllowCredentials) header('Access-Control-Allow-Credentials: true');
   }
 
   /**
-   * Define o que sera emitido no header 'Access-Control-Allow-Origin' caso esta classe HttpHelper emita uma resposta.
-   * Default empty.
-   * @param string|null $allow_origin Conteudo que vai no header 'Access-Control-Allow-Origin'.
+   * Define o valor padrão para o header 'Access-Control-Allow-Origin' nas respostas.
+   * @param string|null $valor
    */
-  public static function setAllowOrigin(?string $allow_origin)
+  public static function setAllowOrigin(?string $valor)
   {
-    self::$allow_origin = $allow_origin;
+    self::$headerAllowOrigin = $valor;
   }
 
   /**
-   * Define o que sera emitido no header 'Access-Control-Allow-Headers' caso esta classe HttpHelper emita uma resposta.
-   * Default: 'Authorization, Content-Type, Cache-Control'.
-   * @param string|null $allow_headers Conteudo que vai no header 'Access-Control-Allow-Headers'.
+   * Define o valor padrão para o header 'Access-Control-Allow-Headers' nas respostas.
+   * @param string|null $valor
    */
-  public static function setAllowHeaders(?string $allow_headers)
+  public static function setAllowHeaders(?string $valor)
   {
-    self::$allow_headers = $allow_headers;
+    self::$headerAllowHeaders = $valor;
   }
 
   /**
-   * Repostas HTTP emitidas por esta classe HttpHelper devem mencionar o header 'Access-Control-Allow-Credentials' com o valor definido aqui.
-   * Default: false.
-   * @param bool $allow_credentials Valor para o header 'Access-Control-Allow-Credentials'.
+   * Define o valor padrão para o header 'Access-Control-Allow-Credentials' nas respostas.
+   * @param bool $valor
    */
-  public static function setAllowCredentials(bool $allow_credentials)
+  public static function setAllowCredentials(bool $valor)
   {
-    self::$allow_credentials = $allow_credentials;
+    self::$headerAllowCredentials = $valor;
   }
 
   /**
-   * Obtem o conteudo atual de um Header desejado que estiver presente na requisicao atual.
+   * Obtem o valor de um Header da requisicao.
    * @param string $header Nome do header desejado.
    * @return string|null Valor do header, null caso o header nao esteja presente na requisicao.
    */
@@ -127,7 +127,7 @@ abstract class HttpHelper
           $headers['content-disposition'],
           $matches
         );
-        list(, $type, $name) = $matches;
+        list(, , $name) = $matches;
         isset($matches[4]) and $filename = $matches[4];
 
         switch ($name) {
@@ -252,44 +252,28 @@ abstract class HttpHelper
    * Confere se a requisicao eh do metodo HTTP GET, caso contrario mata o script e responde HTTP 405.
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
-   * @param string|null $allowOrigin Origens aceitas, separadas por virgula.
-   * @param string|null $allowHeaders Cabecalhos aceitos, separados por virgula.
+   * @param string|null $headerAllowOrigin null para utilizar o valor padrão da classe.
+   * @param string|null $headerAllowHeaders null para utilizar o valor padrão da classe.
+   * @param bool|null $headerAllowCredentials null para utilizar o valor padrão da classe.
    * @return bool Retorna o boleano se programou para nao emitir o erro.
    */
-  public static function validarGet(bool $emitirErro = true, ?string $allowOrigin = null, ?string $allowHeaders = null): bool
+  public static function validarGet(bool $emitirErro = true, ?string $headerAllowOrigin = null, ?string $headerAllowHeaders = null, ?bool $headerAllowCredentials = null): bool
   {
-    header('Access-Control-Allow-Methods: GET, OPTIONS');
-    if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
-    if ($allowHeaders) header("Access-Control-Allow-Headers: $allowHeaders");
-
-    $method = self::getMethod();
-    if ($method !== 'GET') {
-      if ($emitirErro) self::erroJson(405, 'Metodo nao permitido');
-      else return false;
-    }
-    return true;
+    return self::validarMetodos(['GET'], $emitirErro, $headerAllowOrigin, $headerAllowHeaders, $headerAllowCredentials);
   }
 
   /**
    * Confere se a requisicao eh do metodo HTTP POST, caso contrario mata o script e responde HTTP 405.
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
-   * @param string|null $allowOrigin Origens aceitas, separadas por virgula.
-   * @param string|null $allowHeaders Cabecalhos aceitos, separados por virgula.
+   * @param string|null $headerAllowOrigin null para utilizar o valor padrão da classe.
+   * @param string|null $headerAllowHeaders null para utilizar o valor padrão da classe.
+   * @param bool|null $headerAllowCredentials null para utilizar o valor padrão da classe.
    * @return bool Retorna o boleano se programou para nao emitir o erro.
    */
-  public static function validarPost(bool $emitirErro = true, ?string $allowOrigin = null, ?string $allowHeaders = null): bool
+  public static function validarPost(bool $emitirErro = true, ?string $headerAllowOrigin = null, ?string $headerAllowHeaders = null, ?bool $headerAllowCredentials = null): bool
   {
-    header('Access-Control-Allow-Methods: POST, OPTIONS');
-    if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
-    if ($allowHeaders) header("Access-Control-Allow-Headers: $allowHeaders");
-
-    $method = self::getMethod();
-    if ($method !== 'POST') {
-      if ($emitirErro) self::erroJson(405, 'Metodo nao permitido');
-      else return false;
-    }
-    return true;
+    return self::validarMetodos(['POST'], $emitirErro, $headerAllowOrigin, $headerAllowHeaders, $headerAllowCredentials);
   }
 
   /**
@@ -297,50 +281,42 @@ abstract class HttpHelper
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
    * @param string $metodo Metodo HTTP. Ex: 'GET','POST','PUT','DELETE'.
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
-   * @param string|null $allowOrigin Origens aceitas, separadas por virgula.
-   * @param string|null $allowHeaders Cabecalhos aceitos, separados por virgula.
+   * @param string|null $headerAllowOrigin null para utilizar o valor padrão da classe.
+   * @param string|null $headerAllowHeaders null para utilizar o valor padrão da classe.
+   * @param bool|null $headerAllowCredentials null para utilizar o valor padrão da classe.
    * @return bool Retorna o boleano se programou para nao emitir o erro.
    */
-  public static function validarMetodo(string $metodo, bool $emitirErro = true, ?string $allowOrigin = null, ?string $allowHeaders = null): bool
+  public static function validarMetodo(string $metodo, bool $emitirErro = true, ?string $headerAllowOrigin = null, ?string $headerAllowHeaders = null, ?bool $headerAllowCredentials = null): bool
   {
-    header("Access-Control-Allow-Methods: $metodo, OPTIONS");
-    if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
-    if ($allowHeaders) header("Access-Control-Allow-Headers: $allowHeaders");
-
-    $method = self::getMethod();
-    if ($method !== $metodo) {
-      if ($emitirErro) self::erroJson(405, 'Metodo nao permitido');
-      else return false;
-    }
-    return true;
+    return self::validarMetodos([$metodo], $emitirErro, $headerAllowOrigin, $headerAllowHeaders, $headerAllowCredentials);
   }
 
   /**
    * Confere se a requisicao eh um dos metodos HTTP especificados, caso contrario mata o script e responde HTTP 405.
    * Metodo OPTIONS eh validado, encerrado o script com resposta HTTP positiva para funcionar com CORS.
-   * @param string $metodos Metodos HTTP. Ex: ['GET','POST','PUT','DELETE'].
+   * @param string[] $metodos Metodos HTTP. Ex: ['GET','POST','PUT','DELETE'].
    * @param bool $emitirErro Se a validacao for rejeitada encerra o script emitindo um erro JSON e HTTP 405. Ou entao retorna um boleano.
-   * @param string|null $allowOrigin Origens aceitas, separadas por virgula.
-   * @param string|null $allowHeaders Cabecalhos aceitos, separados por virgula.
+   * @param string|null $headerAllowOrigin null para utilizar o valor padrão da classe.
+   * @param string|null $headerAllowHeaders null para utilizar o valor padrão da classe.
+   * @param bool|null $headerAllowCredentials null para utilizar o valor padrão da classe.
    * @return bool Retorna o boleano se programou para nao emitir o erro.
    */
-  public static function validarMetodos($metodos = ['GET', 'POST', 'PUT', 'DELETE'], bool $emitirErro = true, ?string $allowOrigin = null, ?string $allowHeaders = null): bool
+  public static function validarMetodos(array $metodos = ['GET','POST','PUT','DELETE'], bool $emitirErro = true, ?string $headerAllowOrigin = null, ?string $headerAllowHeaders = null, ?bool $headerAllowCredentials = null): bool
   {
     if (gettype($metodos) !== 'array') self::erroJson(400, "validarMetodos() precisa receber um array de string no primeiro parametro");
     if (count($metodos) === 0) self::erroJson(400, "validarMetodos() precisa receber ao menos 1 metodo http no array do primeiro parametro");
 
-    $metodos = array_map(function ($metodo) {
-      return strtoupper($metodo);
-    }, $metodos); //Passa para caixa alta.
+    $metodos = array_map(function ($metodo) { return strtoupper($metodo); }, $metodos); //Passa para caixa alta.
     $metodosString = count($metodos) > 1 ? implode(", ", $metodos) : $metodos[0]; //Une em string separado por virgula.
 
+    self::applyCorsHeaders($headerAllowOrigin, $headerAllowHeaders, $headerAllowCredentials);
     header("Access-Control-Allow-Methods: $metodosString, OPTIONS");
-    if ($allowOrigin) header("Access-Control-Allow-Origin: $allowOrigin");
-    if ($allowHeaders) header("Access-Control-Allow-Headers: $allowHeaders");
 
-    $method = self::getMethod();
-    if (!in_array($method, $metodos)) {
-      if ($emitirErro) self::erroJson(405, 'O metodo nao permitido');
+    $metodoAtual = self::getMethod();
+    if ($metodoAtual === 'OPTIONS') self::emitirHttp();
+
+    if (!in_array($metodoAtual, $metodos)) {
+      if ($emitirErro) self::erroJson(405, 'Metodo HTTP desautorizado');
       else return false;
     }
     return true;
