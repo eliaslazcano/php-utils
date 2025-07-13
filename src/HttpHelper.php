@@ -674,16 +674,14 @@ abstract class HttpHelper
    * @param string $noRouteMessage Se a rota nao existir, e nao houver um arquivo 404.php, esta mensagem eh retornada em JSON com erro 404.
    * @return void
    */
-  public static function useRouter(string $mainDir, ?string $logFile = null, string $noRouteMessage = 'Nenhum webservice corresponde a solicitacao')
+  public static function useRouter(string $mainDir, ?string $logFile = null, string $noRouteMessage = 'Endpoint desconhecido')
   {
-    self::applyCorsHeaders();
     if ($logFile) {
       ini_set('log_errors', 1);
       ini_set('error_log', $logFile);
       ini_set('display_errors', 0);
       error_reporting(E_ALL);
     }
-    if (self::getMethod() === 'OPTIONS') die();
 
     $mainDir = rtrim($mainDir, '/');
     $url = $_SERVER['PATH_INFO'] ?? ($_SERVER['ORIG_PATH_INFO'] ?? null);
