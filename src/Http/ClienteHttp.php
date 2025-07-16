@@ -38,14 +38,15 @@ class ClienteHttp
   }
 
   /**
-   * Envia requisições HTTP para o sistema da API.
-   * @param string $method Método da requisição (GET, POST, PUT, PATCH).
-   * @param string $endpoint URL da requisição, omitindo a baseUrl, exemplo: '/v2/cob/'.
-   * @param string|null $body Texto JSON para o corpo da requisição.
-   * @param array $headers Cabeçalhos da requisição.
-   * @return RespostaHttp Um objeto contendo informações da resposta HTTP.
+   * Envia uma requisição HTTP para a API e retorna a resposta encapsulada.
+   * @param string $method Tipo da requisição (ex: 'GET', 'POST', 'PUT', 'PATCH').
+   * @param string $endpoint Caminho relativo da URL da API (sem a base URL), ex: '/v2/cob/'.
+   * @param string|null $body Corpo da requisição (usado para POST, PUT, PATCH). ex: json_encode(['valor' => 10]).
+   * @param string[] $headers Lista de cabeçalhos adicionais a serem enviados na requisição. ex: ['Authorization: Bearer xxx']
+   * @param resource|null $curl Recurso cURL reutilizável; se não fornecido, será criado internamente.
+   * @return RespostaHttp Objeto contendo status HTTP, corpo da resposta, headers e outros metadados.
    */
-  public function send(string $method, string $endpoint, ?string $body = null, array $headers = []): RespostaHttp
+  public function send(string $method, string $endpoint, ?string $body = null, array $headers = [], &$curl = null): RespostaHttp
   {
     $endpoint = ltrim($endpoint, '/');
     $url = $this->baseUrl . '/' . $endpoint;
@@ -54,7 +55,7 @@ class ClienteHttp
     if ($body && in_array($method, array('POST','PUT','PATCH'))) $headers[] = 'Content-Type: application/json';
 
     // Configura o CURL
-    $curl = curl_init();
+    if (!$curl) $curl = curl_init();
     curl_setopt_array($curl, [
       CURLOPT_URL => $url,
       CURLOPT_RETURNTRANSFER => true,
