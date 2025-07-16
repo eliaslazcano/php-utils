@@ -31,8 +31,14 @@ class ClienteHttp
   {
     //Padrao para erros JSON das APIs que utilizam o HttpHelper do Elias
     if (!$respostaHttp->error && $respostaHttp->response && $respostaHttp->code >= 400 && $respostaHttp->isJson()) {
-      $conteudo = $respostaHttp->getJson();
-      if (!empty($conteudo->mensagem)) $respostaHttp->error = $conteudo->mensagem;
+      $conteudo = $respostaHttp->getJson(true);
+      $possiveisCamposDeErro = ['mensagem','message','msg','error','erro','errorMessage','error_description','description','detail','descricao'];
+      foreach ($possiveisCamposDeErro as $campo) {
+        if (!empty($conteudo[$campo]) && is_string($conteudo[$campo])) {
+          $respostaHttp->error = $conteudo[$campo];
+          break;
+        }
+      }
     }
     return $respostaHttp;
   }
@@ -53,9 +59,14 @@ class ClienteHttp
 
     $headers[] = 'Cache-Control: no-cache';
     if ($body && in_array($method, array('POST','PUT','PATCH'))) $headers[] = 'Content-Type: application/json';
+    if (count($headers) > 1) $headers = array_unique($headers); // Impede duplicidade de header
 
-    // Configura o CURL
-    if (!$curl) $curl = curl_init();
+    # Configura o CURL
+    $curlInterno = false;
+    if (!$curl) {
+      $curl = curl_init();
+      $curlInterno = true;
+    }
     curl_setopt_array($curl, [
       CURLOPT_URL => $url,
       CURLOPT_RETURNTRANSFER => true,
@@ -63,7 +74,8 @@ class ClienteHttp
       CURLOPT_CUSTOMREQUEST => $method,
       CURLOPT_HTTPHEADER => $headers,
       CURLOPT_FOLLOWLOCATION => true,
-      CURLOPT_MAXREDIRS => 8,
+      CURLOPT_POSTREDIR => CURL_REDIR_POST_ALL,
+      CURLOPT_MAXREDIRS => 4,
       CURLOPT_TIMEOUT => $this->timeout,
       CURLOPT_CONNECTTIMEOUT => 8,
       CURLOPT_SSL_VERIFYHOST => 0,
@@ -72,26 +84,35 @@ class ClienteHttp
 
     if ($body && in_array($method, ['POST', 'PUT', 'PATCH'])) curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
 
-    // Executa
+    # Executa
     $response = curl_exec($curl);
-    $error = curl_error($curl) ?: null;
-    $code = !$error ? curl_getinfo($curl, CURLINFO_HTTP_CODE) : null;
-    $type = !$error ? curl_getinfo($curl, CURLINFO_CONTENT_TYPE) : null;
+    $curlError = curl_error($curl) ?: null;
+    //$curlErrorCode = curl_errno($curl);
 
-    $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
-    $header = substr($response, 0, $headerSize);
-    $body = substr($response, $headerSize);
-
-    curl_close($curl);
-
-    // Captura o nome do arquivo, se presente
+    # Obtem metadados da resposta
+    $httpCode = null;
+    $contentType = null;
+    $body = null;
     $filename = null;
-    if (preg_match('/Content-Disposition:.*filename=["\']?([^"\';]+)["\']?/i', $header, $matches)) {
-      $filename = $matches[1];
+    if (!$curlError) {
+      $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+      $contentType = curl_getinfo($curl, CURLINFO_CONTENT_TYPE);
+
+      # Obtem o body e header
+      $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+      $header = substr($response, 0, $headerSize); //header puro
+      $body = substr($response, $headerSize); //body puro
+
+      # Captura o nome do arquivo, se presente
+      if (preg_match('/Content-Disposition:.*filename=["\']?([^"\';]+)["\']?/i', $header, $matches)) {
+        $filename = $matches[1];
+      }
     }
 
-    // Cria a resposta e insere o filename, se houver
-    $resposta = new RespostaHttp($url, $error, $code, $type, $body);
+    if ($curlInterno) curl_close($curl);
+
+    # Cria a resposta e insere o filename, se houver
+    $resposta = new RespostaHttp($url, $curlError, $httpCode, $contentType, $body);
     if ($filename) $resposta->filename = $filename;
 
     return $this->interceptarResposta($resposta);

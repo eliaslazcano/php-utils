@@ -15,7 +15,7 @@ class RespostaHttp
   public $code;
   /** @var string|null O mime type da resposta. */
   public $type;
-  /** @var string|null O corpo da resposta. */
+  /** @var string|null O corpo da resposta em texto puro (body). */
   public $response;
   /** @var string|null O nome do arquivo obtido (filtrado do header Content-Disposition). */
   public $filename = null;
@@ -35,24 +35,49 @@ class RespostaHttp
     $this->response = $response;
   }
 
+  /**
+   * Descubra se a resposta está em formato JSON.
+   * @return bool
+   */
   public function isJson(): bool
   {
     return $this->type && substr($this->type, 0, 16) === 'application/json';
   }
 
+  /**
+   * Descubra se a resposta está em formato JSON.
+   * @return bool
+   */
   public function ehJson(): bool
   {
     return $this->isJson();
   }
 
-  public function getJson($associative = false)
+  /**
+   * Retorna o conteúdo JSON parseado. Se o conteúdo não for do tipo JSON, retorna null.
+   * @param bool $associative false para objeto, true para array associativo.
+   * @return mixed|null
+   */
+  public function getJson(bool $associative = false)
   {
     if (!$this->isJson()) return null;
     return json_decode($this->response, $associative);
   }
 
-  public function obterJson($associativo = false)
+  /**
+   * Retorna o conteúdo JSON parseado. Se o conteúdo não for do tipo JSON, retorna null.
+   * @param bool $associativo false para objeto, true para array associativo.
+   * @return mixed|null
+   */
+  public function obterJson(bool $associativo = false)
   {
     return $this->getJson($associativo);
+  }
+
+  public function __get($name)
+  {
+    if ($name === 'body') return $this->response;
+    if ($name === 'erro') return $this->error;
+    return null;
   }
 }
