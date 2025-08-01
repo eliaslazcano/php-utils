@@ -5,6 +5,8 @@
 
 namespace Eliaslazcano\Helpers\Http;
 
+use Eliaslazcano\Helpers\ArrayHelper;
+
 class ClienteHttp
 {
   /** @var string Prefixo da URL da API */
@@ -47,18 +49,24 @@ class ClienteHttp
    * Envia uma requisição HTTP para a API e retorna a resposta encapsulada.
    * @param string $method Tipo da requisição (ex: 'GET', 'POST', 'PUT', 'PATCH').
    * @param string $endpoint Caminho relativo da URL da API (sem a base URL), ex: '/v2/cob/'.
-   * @param string|null $body Corpo da requisição (usado para POST, PUT, PATCH). ex: json_encode(['valor' => 10]).
+   * @param array|string|null $body Corpo da requisição (usado para POST, PUT, PATCH). ex: json_encode(['valor' => 10]).
    * @param string[] $headers Lista de cabeçalhos adicionais a serem enviados na requisição. ex: ['Authorization: Bearer xxx']
    * @param resource|null $curl Recurso cURL reutilizável; se não fornecido, será criado internamente.
    * @return RespostaHttp Objeto contendo status HTTP, corpo da resposta, headers e outros metadados.
    */
-  public function send(string $method, string $endpoint, ?string $body = null, array $headers = [], &$curl = null): RespostaHttp
+  public function send(string $method, string $endpoint, $body = null, array $headers = [], &$curl = null): RespostaHttp
   {
     $endpoint = ltrim($endpoint, '/');
     $url = $this->baseUrl . '/' . $endpoint;
 
-    $headers[] = 'Cache-Control: no-cache';
-    if ($body && in_array($method, array('POST','PUT','PATCH'))) $headers[] = 'Content-Type: application/json';
+    if (!ArrayHelper::find($headers, function ($i) {
+      return stripos($i, 'Cache-Control') !== false;
+    })) $headers[] = 'Cache-Control: no-cache';
+    if ($body && in_array($method, array('POST','PUT','PATCH'))) {
+      if (!ArrayHelper::find($headers, function ($i) {
+          return stripos($i, 'Content-Type') !== false;
+        }) && is_string($body)) $headers[] = 'Content-Type: application/json';
+    }
     if (count($headers) > 1) $headers = array_unique($headers); // Impede duplicidade de header
 
     # Configura o CURL
