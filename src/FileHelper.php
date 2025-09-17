@@ -8,14 +8,39 @@ use InvalidArgumentException;
 class FileHelper
 {
   /**
-   * Descobre o tipo (mime type) de um arquivo analisando seu conteúdo binário. (Requer extensão finfo)
+   * Descobre o tipo (MIME) de um arquivo analisando seu conteúdo binário. (Requer extensão finfo)
    * @param string $conteudoBinario Conteúdo do arquivo em string binaria.
    * @return string Se não detectado retorna 'application/octet-stream'.
    */
-  public static function getMimeType(string $conteudoBinario): string
+  public static function getMimeFromString(string $conteudoBinario): string
   {
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     return $finfo->buffer($conteudoBinario) ?: 'application/octet-stream';
+  }
+
+  /**
+   * Extrai o tipo (MIME) de um arquivo analisando seu conteúdo em formato base64.
+   * @param string $base64 Conteúdo do arquivo em string formato base64.
+   * @return string Se não detectado retorna 'application/octet-stream'.
+   */
+  public static function getMimeFromBase64(string $base64): string {
+    if (preg_match('#^data(?://)?:(.*?);base64,#', $base64, $matches)) {
+      $mime = $matches[1];
+      if (substr($mime, 0, 2) === '//') $mime = substr($mime, 2);
+      return $mime;
+    }
+    return 'application/octet-stream';
+  }
+
+  /**
+   * Descobre o tipo (MIME) de um arquivo armazenado localmente.
+   * @param string $path Caminho do arquivo alocado.
+   * @return string Se não detectado retorna 'application/octet-stream'.
+   */
+  public static function getMimeFromFile(string $path): string
+  {
+    $str = self::fileToString($path);
+    return self::getMimeFromString($str);
   }
 
   /**
@@ -66,7 +91,7 @@ class FileHelper
    */
   public static function stringToBase64(string $conteudoBinario, ?string $mime = null): string
   {
-    $mime = $mime ? strtolower(trim($mime)) : self::getMimeType($conteudoBinario);
+    $mime = $mime ? strtolower(trim($mime)) : self::getMimeFromString($conteudoBinario);
     return 'data:' . $mime . ';base64,' . base64_encode($conteudoBinario);
   }
 
@@ -90,6 +115,6 @@ class FileHelper
   public static function fileToBase64(string $path): string
   {
     $str = self::fileToString($path);
-    return self::stringToBase64($str, self::getMimeType($str));
+    return self::stringToBase64($str, self::getMimeFromString($str));
   }
 }
