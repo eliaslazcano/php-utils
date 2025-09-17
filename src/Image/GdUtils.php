@@ -10,6 +10,7 @@
 
 namespace Eliaslazcano\Helpers\Image;
 
+use Eliaslazcano\Helpers\FileHelper;
 use Exception;
 
 class GdUtils
@@ -241,6 +242,20 @@ class GdUtils
     }
     if (!$mimeType) throw new Exception('Não foi possível identificar o tipo de imagem.');
     return "data:$mimeType;base64,".base64_encode($conteudo);
+  }
+
+  /**
+   * Converte uma instância de resource (imagem GD) para um resultado em string no formato base64.
+   * @param resource $imagemGd - Imagem em formato GD.
+   * @param int|null $type - Constantes como IMAGETYPE_JPEG, IMAGETYPE_PNG ou IMAGETYPE_WEBP. Não informar vai tentar usar WEBP e depois JPEG.
+   * @param int $quality - Qualidade entre 0 a 100.
+   * @return string - String base64.
+   * @throws Exception - Dispara se o formato da saída for inválido.
+   */
+  public static function toBase64FromGd($imagemGd, ?int $type = null, int $quality = 90): string
+  {
+    $str = self::toString($imagemGd, $type, $quality);
+    return FileHelper::stringToBase64($str);
   }
 
   /**
