@@ -159,6 +159,25 @@ class StringHelper
   }
 
   /**
+   * Aplica uma máscara a uma string.
+   * @param string $valor String original (pode ter letras, pontos etc.)
+   * @param string $mascara Máscara no formato com # (ex: '###.###.###-##')
+   * @return string
+   */
+  public static function aplicarMascara(string $valor, string $mascara): string
+  {
+    $texto = trim($valor);
+    $indice = -1;
+    $mascara_chars = str_split($mascara);
+
+    foreach ($mascara_chars as &$char) {
+      if ($char === '#' && isset($texto[++$indice])) $char = $texto[$indice];
+    }
+
+    return implode('', $mascara_chars);
+  }
+
+  /**
    * Formata um CPF ou CNPJ para a mascara ideal.
    * @param string $cpf_cnpj
    * @return string
@@ -169,10 +188,7 @@ class StringHelper
     $tamanho = strlen($digitos);
     if ($tamanho !== 11 && $tamanho !== 14) return $cpf_cnpj;
     $mascara = $tamanho === 11 ? '###.###.###-##' : '##.###.###/####-##';
-    $mascara_size = strlen($mascara);
-    $indice = -1;
-    for ($i = 0; $i < $mascara_size; $i++) if ($mascara[$i] === '#') $mascara[$i] = $digitos[++$indice];
-    return $mascara;
+    return self::aplicarMascara($digitos, $mascara);
   }
 
   /**
@@ -184,19 +200,16 @@ class StringHelper
   public static function camuflarCpfCnpj(string $cpfCnpj, bool $formatado = true): string
   {
     if (!$cpfCnpj) return $cpfCnpj;
-    $x = self::extractNumbers($cpfCnpj);
-    $tamanho = strlen($x);
+    $digitos = self::extractNumbers($cpfCnpj);
+    $tamanho = strlen($digitos);
     if ($tamanho !== 11 && $tamanho !== 14) return $cpfCnpj;
-    $x = ($tamanho === 11) ?
-      substr($x,0,3).'XXXXX'.substr($x,8):
-      substr($x,0,2).'XXXXXX'.substr($x,8);
-    if (!$formatado) return $x;
+    $camuflado = ($tamanho === 11) ?
+      substr($digitos,0,3).'XXXXX'.substr($digitos,8):
+      substr($digitos,0,2).'XXXXXX'.substr($digitos,8);
+    if (!$formatado) return $camuflado;
 
     $mascara = $tamanho === 11 ? '###.###.###-##' : '##.###.###/####-##';
-    $mascara_size = strlen($mascara);
-    $indice = -1;
-    for ($i = 0; $i < $mascara_size; $i++) if ($mascara[$i] === '#') $mascara[$i] = $x[++$indice];
-    return $mascara;
+    return self::aplicarMascara($camuflado, $mascara);
   }
 
   /**
