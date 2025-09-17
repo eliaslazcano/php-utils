@@ -89,7 +89,7 @@ class FileHelper
    * @param string|null $mime Tipo do arquivo em convenção mime. Se não fornecer será detectado.
    * @return string String base64 que possui o mime + conteúdo (data URI).
    */
-  public static function stringToBase64(string $conteudoBinario, ?string $mime = null): string
+  public static function stringToBase64(string $conteudoBinario, ?string &$mime = null): string
   {
     $mime = $mime ? strtolower(trim($mime)) : self::getMimeFromString($conteudoBinario);
     return 'data:' . $mime . ';base64,' . base64_encode($conteudoBinario);
