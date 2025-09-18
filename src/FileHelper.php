@@ -115,6 +115,7 @@ class FileHelper
   public static function fileToBase64(string $path): string
   {
     $str = self::fileToString($path);
-    return self::stringToBase64($str, self::getMimeFromString($str));
+    $mime = self::getMimeFromString($str);
+    return self::stringToBase64($str, $mime);
   }
 }
