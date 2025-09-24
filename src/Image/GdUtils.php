@@ -604,4 +604,35 @@ class GdUtils
     $novoNumero = (100 - $numeroOrigem) * (9 / 100);
     return intval(ceil($novoNumero));
   }
+
+  /**
+   * Ideal para assinaturas/rubricas, pinta o fundo branco de transparente e recorta as bordas.
+   * @param string $imagemStr Imagem em string binaria.
+   * @param bool $base64URI Retorna a foto em formato URI base64.
+   * @param int $tolerancia Se livra tambem de cores proximas ao branco. Quanto maior, mais se distancia do branco.
+   * @param int $limitePixels Maximo de pixels permitidos na imagem pra evitar alto consumo de RAM. Default: 16777216 (4096x4096) (64MB).
+   * @return string Imagem em string.
+   * @throws Exception
+   */
+  public static function tratarAssinatura(string $imagemStr, bool $base64URI = false, int $tolerancia = 15, int $limitePixels = 16777216): string
+  {
+    $imagemInfo = @getimagesizefromstring($imagemStr);
+    if (empty($imagemInfo[0]) || empty($imagemInfo[1])) throw new Exception('Não foi possível inspecionar a imagem de assinatura.');
+    $totalPixels = $imagemInfo[0] * $imagemInfo[1];
+    if ($totalPixels >= $limitePixels) throw new Exception('A quantidade de pixels da imagem excede o limite permitido.');
+
+    $assinaturaGd = self::fromString($imagemStr);
+    $assinaturaBranca = self::pintarPixelsTransparentes($assinaturaGd);
+    imagedestroy($assinaturaGd);
+    $assinaturaAparada = self::apararBordas($assinaturaBranca, 0xFFFFFF, $tolerancia);
+    imagedestroy($assinaturaBranca);
+    $assinaturaTransparente = self::pintarCoresProximas($assinaturaAparada, [255, 255, 255], null, $tolerancia);
+    imagedestroy($assinaturaAparada);
+
+    $retorno = $base64URI ?
+      GdUtils::toBase64FromGd($assinaturaTransparente, IMAGETYPE_PNG) :
+      GdUtils::toString($assinaturaTransparente, IMAGETYPE_PNG);
+    imagedestroy($assinaturaTransparente);
+    return $retorno;
+  }
 }
