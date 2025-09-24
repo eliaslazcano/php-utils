@@ -12,13 +12,13 @@ class ArrayHelper
   /**
    * Filtra os itens do array, retornando apenas aqueles que retornam true na funcao de filtro.
    * @param array $array O array que será filtrado.
-   * @param callback $function Funcao de filtro, percorre o array fornecendo o item no primeiro parametro e espera um retorno boleano.
+   * @param callback $function Funcao de filtro, percorre o array fornecendo o item no primeiro parametro, indice no segundo, e espera um retorno boleano.
    * @param bool $resetIndexes Refaz os indices do array (com array_values). False = mantem os indices.
    * @return array
    */
   public static function filter(array $array, callable $function, bool $resetIndexes = false): array
   {
-    $filtered = array_filter($array, $function);
+    $filtered = array_filter($array, $function, ARRAY_FILTER_USE_BOTH);
     return $resetIndexes ? array_values($filtered) : $filtered;
   }
 
