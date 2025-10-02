@@ -216,7 +216,7 @@ class StringHelper
    * Converte uma data/datetime para SQL ou BR, invertendo a posicao do DIA com o ANO.
    * @param string $data Detecta automaticamente o caractere separador. Aceita ANO com 2 ou 4 digitos. Pode conter horas.
    * @param string|null $novo_separador Novo caractere que ira separar DIA, MES e ANO. Use null para manter o atual.
-   * @return string|null Data invertida. Em caso de falha retorna false.
+   * @return string|null Data invertida. Em caso de falha retorna null.
    */
   public static function formatDate(string $data, ?string $novo_separador = null): ?string
   {
