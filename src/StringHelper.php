@@ -57,6 +57,7 @@ class StringHelper
    */
   public static function removeAccents(string $string, ?string $replacer = null): string
   {
+    $string = self::utf8Encode($string);
     if ($replacer === null) $replacer = explode(' ', "a A e E i I o O u U n N c C");
     return preg_replace(
       array("/(á|à|ã|â|ä)/", "/(Á|À|Ã|Â|Ä)/", "/(é|è|ê|ë)/", "/(É|È|Ê|Ë)/",
