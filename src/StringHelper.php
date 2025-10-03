@@ -420,7 +420,7 @@ class StringHelper
    */
   public static function utf8Encode(string $string): string
   {
-    return mb_detect_encoding($string, array('UTF-8', 'ISO-8859-1')) !== 'UTF-8' ? utf8_encode($string) : $string;
+    return mb_detect_encoding($string, array('UTF-8','ISO-8859-1'), true) === 'ISO-8859-1' ? utf8_encode($string) : $string;
   }
 
   /**
@@ -430,7 +430,7 @@ class StringHelper
    */
   public static function utf8Decode(string $string): string
   {
-    return mb_detect_encoding($string, array('UTF-8', 'ISO-8859-1')) !== 'UTF-8' ? $string : utf8_decode($string);
+    return mb_detect_encoding($string, array('ISO-8859-1','UTF-8'), true) === 'UTF-8' ? utf8_decode($string) : $string;
   }
 
   /**
