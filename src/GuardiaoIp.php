@@ -73,13 +73,14 @@ class GuardiaoIp
   /**
    * Retorna um boleano pra saber se um IP está na lista branca.
    * @param string|null $ip Endereço de IP pra ser testado, null = detectar e usar o endereço atual.
-   * @param string[] $ipsConfiaveis Endereços IP permitidos.
+   * @param string[]|null $ipsConfiaveis Endereços IP permitidos.
    * @param bool $incluirListaBranca Os endereços IP confiaveis contidos em LISTA_BRANCA serão considerados.
    * @return bool true = aprovado, false = reprovado
    */
-  public static function testarIp(string $ip = null, array $ipsConfiaveis = [], bool $incluirListaBranca = true): bool
+  public static function testarIp(string $ip = null, ?array $ipsConfiaveis = [], bool $incluirListaBranca = true): bool
   {
     $ip = $ip ?: self::getIp();
+    if (!$ipsConfiaveis) $ipsConfiaveis = array();
     if ($incluirListaBranca) $ipsConfiaveis += static::LISTA_BRANCA;
     foreach ($ipsConfiaveis as $i) {
       if (self::verificarCorrespondencia($ip, $i)) return true;
@@ -90,10 +91,10 @@ class GuardiaoIp
   /**
    * Emite uma mensagem de erro em JSON caso o IP do cliente não esteja na lista branca.
    * @param string|null $ip Endereço de IP pra ser testado. null = detectar e usar o endereço atual.
-   * @param string[] $ipsConfiaveis Endereços IP permitidos, null para usar a lista branca padrão.
+   * @param string[]|null $ipsConfiaveis Endereços IP permitidos, null para usar a lista branca padrão.
    * @return void|no-return Caso o IP seja desautorizado emite um erro HTTP 401 com uma mensagem em JSON.
    */
-  public static function validarIp(string $ip = null, array $ipsConfiaveis = [], bool $incluirListaBranca = true): void
+  public static function validarIp(string $ip = null, ?array $ipsConfiaveis = [], bool $incluirListaBranca = true): void
   {
     if (!self::testarIp($ip, $ipsConfiaveis, $incluirListaBranca)) {
       HttpHelper::erroJson(401, "IP desautorizado", 1, ['ip' => self::getIp()]);
