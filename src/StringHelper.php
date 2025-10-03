@@ -265,6 +265,7 @@ class StringHelper
    */
   public static function formatPhone(string $num): string
   {
+    if (!is_string($num)) $num = strval($num);
     $num = self::extractNumbers($num);
     $tamanho = strlen($num);
     if ($tamanho === 8) return substr_replace($num, '-', 4, 0);
@@ -380,6 +381,7 @@ class StringHelper
    */
   public static function mesDoAno(?int $numero_do_mes = null): string
   {
+    if ($numero_do_mes && !is_int($numero_do_mes)) $numero_do_mes = intval($numero_do_mes);
     $numero_do_mes = $numero_do_mes ?: intval(date('m'));
     switch ($numero_do_mes) {
       case 1:
@@ -530,5 +532,39 @@ class StringHelper
     if ($rev === 10 || $rev === 11) $rev = 0;
 
     return $rev === intval($sanitizedCpf[10]);
+  }
+
+  /**
+   * Verifica se o numero do telefone é um celular válido. [DDD] + 9 digitos, comecando com num.9).
+   * @param string $telefone - Numero do telefone celular. A funcao vai considerar apenas os caracteres numericos contidos.
+   * @param bool $exigirDDD - A funcao vai reprovar o telefone se ele estiver sem o DDD.
+   * @return bool - true: aprovado, false: reprovado.
+   */
+  public static function validarCelular(string $telefone, bool $exigirDDD = true): bool
+  {
+    if (!is_string($telefone)) $telefone = strval($telefone);
+    $num = self::extractNumbers($telefone);
+    $num = ltrim($num, '0');
+    $tamanho = strlen($num);
+    if ($tamanho === 11)  {
+      return substr($num, 2, 1) === "9";
+    } elseif ($tamanho === 9) {
+      if ($exigirDDD) return false;
+      return substr($num, 0, 1) === "9";
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Converte um número para string em formato monetario.
+   * @param float $valor Numero original.
+   * @param string $prefixo Prefixo a ser adicionado antes do valor. Ex: 'R$'
+   * @return string
+   */
+  public static function formatoMonetario(float $valor, string $prefixo = ''): string
+  {
+    $resultado = number_format($valor, 2, ",", ".");
+    return $prefixo ? "$prefixo$resultado" : $resultado;
   }
 }
