@@ -23,7 +23,8 @@ class FileHelper
    * @param string $base64 Conteúdo do arquivo em string formato base64.
    * @return string Se não detectado retorna 'application/octet-stream'.
    */
-  public static function getMimeFromBase64(string $base64): string {
+  public static function getMimeFromBase64(string $base64): string
+  {
     if (preg_match('#^data(?://)?:(.*?);base64,#', $base64, $matches)) {
       $mime = $matches[1];
       if (substr($mime, 0, 2) === '//') $mime = substr($mime, 2);

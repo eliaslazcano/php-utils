@@ -201,16 +201,15 @@ class GdUtils
   /**
    * Converte uma instância de resource (imagem GD) para um resultado em string binária do formato desejado.
    * @param resource $imagemGd - Imagem em formato GD.
-   * @param int|null $type - Constantes como IMAGETYPE_JPEG, IMAGETYPE_PNG ou IMAGETYPE_WEBP. Não informar vai tentar usar WEBP e depois JPEG.
+   * @param int $type - Constantes como IMAGETYPE_JPEG, IMAGETYPE_PNG ou IMAGETYPE_WEBP.
    * @param int $quality - Qualidade entre 0 a 100.
    * @return string - String binaria.
    * @throws Exception - Dispara se o formato da saída for inválido.
    */
-  public static function toString($imagemGd, ?int $type = null, int $quality = 90): string
+  public static function toString($imagemGd, int $type = IMAGETYPE_JPEG, int $quality = 90): string
   {
     $saidasSuportadas = [IMAGETYPE_JPEG, IMAGETYPE_PNG];
     if (self::compatibilidadeWebp()) $saidasSuportadas[] = IMAGETYPE_WEBP;
-    if ($type === null) $type = self::compatibilidadeWebp() ? IMAGETYPE_WEBP : IMAGETYPE_JPEG;
     if (!in_array($type, $saidasSuportadas)) throw new Exception('Formato de saída não suportado.');
     ob_start();
     if ($type === IMAGETYPE_JPEG) {
@@ -247,12 +246,12 @@ class GdUtils
   /**
    * Converte uma instância de resource (imagem GD) para um resultado em string no formato base64.
    * @param resource $imagemGd - Imagem em formato GD.
-   * @param int|null $type - Constantes como IMAGETYPE_JPEG, IMAGETYPE_PNG ou IMAGETYPE_WEBP. Não informar vai tentar usar WEBP e depois JPEG.
+   * @param int $type - Constantes como IMAGETYPE_JPEG, IMAGETYPE_PNG ou IMAGETYPE_WEBP.
    * @param int $quality - Qualidade entre 0 a 100.
    * @return string - String base64.
    * @throws Exception - Dispara se o formato da saída for inválido.
    */
-  public static function toBase64FromGd($imagemGd, ?int $type = null, int $quality = 90): string
+  public static function toBase64FromGd($imagemGd, int $type = IMAGETYPE_JPEG, int $quality = 90): string
   {
     $str = self::toString($imagemGd, $type, $quality);
     return FileHelper::stringToBase64($str);
