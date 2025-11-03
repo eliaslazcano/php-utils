@@ -34,7 +34,9 @@ abstract class DatabaseController
         $conn = new PDO($dsn, trim($this->usuario), trim($this->senha), $options);
         if ($this->timezone) $conn->exec("SET time_zone='$this->timezone';");
         $this->conexao = $conn;
-        if ($this->charset && $this->collate) $conn->exec("SET NAMES $this->charset COLLATE $this->collate");
+        if ($this->charset && $this->collate && strpos($this->collate, $this->charset) !== false) {
+          $conn->exec("SET NAMES $this->charset COLLATE $this->collate");
+        }
       } catch (PDOException $e) {
         $exceptionMessage = $e->getMessage();
         $this->aoFalhar($exceptionMessage, "Fracasso em abrir conexao com a base de dados. Exception->getMessage(): ($exceptionMessage)");
