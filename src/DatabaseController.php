@@ -13,6 +13,7 @@ abstract class DatabaseController
   protected $senha;
   protected $base_de_dados;
   protected $charset = 'utf8mb4';
+  protected $collate = 'utf8mb4_general_ci';
   protected $timezone = '-03:00';
   protected $timeout = 20;
 
@@ -33,6 +34,7 @@ abstract class DatabaseController
         $conn = new PDO($dsn, trim($this->usuario), trim($this->senha), $options);
         if ($this->timezone) $conn->exec("SET time_zone='$this->timezone';");
         $this->conexao = $conn;
+        if ($this->charset && $this->collate) $conn->exec("SET NAMES $this->charset COLLATE $this->collate");
       } catch (PDOException $e) {
         $exceptionMessage = $e->getMessage();
         $this->aoFalhar($exceptionMessage, "Fracasso em abrir conexao com a base de dados. Exception->getMessage(): ($exceptionMessage)");
