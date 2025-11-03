@@ -217,11 +217,11 @@ abstract class HttpHelper
    * @param int $httpCode Codigo HTTP.
    * @return never-return
    */
-  public static function emitirHttp(int $httpCode = 200)
+  public static function emitirHttp(int $httpCode = 200, bool $encerrar = true, string $mensagem = '')
   {
     if (function_exists('http_response_code')) http_response_code($httpCode);
     else header("HTTP/1.1 $httpCode", true, $httpCode);
-    die();
+    if ($encerrar) die($mensagem);
   }
 
   /**
