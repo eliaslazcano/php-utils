@@ -16,6 +16,7 @@ abstract class DatabaseController
   protected $collate = 'utf8mb4_general_ci';
   protected $timezone = '-03:00';
   protected $timeout = 20;
+  protected $persistent = false;
 
   /** @var PDO */
   private $conexao;
@@ -23,13 +24,13 @@ abstract class DatabaseController
   /** @var bool O resultados das consultas virão forçadamente com nome da coluna em caixa baixa */
   public $forceColunasCaixaBaixa = false;
 
-  public function __construct(?PDO $conn = null, bool $persistent = true)
+  public function __construct(?PDO $conn = null, ?bool $persistent = null)
   {
     if ($conn) $this->conexao = $conn;
     else {
       $dsn = "mysql:host=$this->host;dbname=$this->base_de_dados";
       if ($this->charset) $dsn .= ";charset=$this->charset";
-      $options = array(PDO::ATTR_TIMEOUT => $this->timeout, PDO::ATTR_PERSISTENT => $persistent);
+      $options = array(PDO::ATTR_TIMEOUT => $this->timeout, PDO::ATTR_PERSISTENT => $persistent ?? $this->persistent);
       try {
         $conn = new PDO($dsn, trim($this->usuario), trim($this->senha), $options);
         if ($this->timezone) $conn->exec("SET time_zone='$this->timezone';");
