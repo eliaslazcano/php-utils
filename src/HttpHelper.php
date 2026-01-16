@@ -661,7 +661,7 @@ abstract class HttpHelper
     $fullPath = "$diretorio/$arquivo";
     if (file_exists($fullPath) && is_dir($fullPath)) return 'O log não pode ser gravado porque há um diretório com o mesmo nome do arquivo';
 
-    $texto = '[' . date('Y-m-d H:i:s') . '] ' . trim($texto) . PHP_EOL;
+    $texto = '[' . date('Y-m-d H:i:s') . ' ' . self::obterIp() . ' ' . self::getHeader('Content-Type') . '] ' . trim($texto) . PHP_EOL;
     $sucesso = file_put_contents($fullPath, $texto, FILE_APPEND);
     if (!$sucesso) return 'Não foi possível gravar o arquivo de log';
     return null;
