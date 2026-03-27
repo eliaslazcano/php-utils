@@ -568,4 +568,20 @@ class StringHelper
     $resultado = number_format($valor, 2, ",", ".");
     return $prefixo ? "$prefixo$resultado" : $resultado;
   }
+
+  /**
+   * Gera uma string randomica no padrão UUID V4.
+   * @return string|null Retorna null em caso de erro.
+   */
+  public static function gerar_uuidv4(): ?string
+  {
+    try {
+      $data = random_bytes(16); // Gera 16 bytes (128 bits) de dados randomicos
+    } catch (Exception $e) {
+      return null;
+    }
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // Define versao para 0100 (4)
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // Define bits 6-7 para 10 (variante)
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4)); // Formata em 8-4-4-4-12 string
+  }
 }
