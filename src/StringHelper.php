@@ -584,4 +584,30 @@ class StringHelper
     $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // Define bits 6-7 para 10 (variante)
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4)); // Formata em 8-4-4-4-12 string
   }
+
+  /**
+   * Gera a string para usar no header Content-Disposition com suporte a UTF-8 (RFC 6266).
+   * @param string $filename Nome do arquivo (apenas o nome, sem diretório).
+   * @param bool $inline true = exibir inline (navegador); false = forçar download.
+   * @return string
+   */
+  public static function gerarContentDisposition(string $filename, bool $inline = false): string
+  {
+    // Sanitiza: remove barras, null bytes e caracteres de controle
+    $filename = preg_replace('/[\x00-\x1F\x7F\/\\\\]/', '', $filename);
+    $filename = trim($filename);
+
+    if ($filename === '') throw new \InvalidArgumentException('O nome do arquivo não pode estar vazio após sanitização.');
+
+    $disposition = $inline ? 'inline' : 'attachment';
+    $asciiName = preg_replace('/[^\x20-\x7E]/', '_', $filename); // Versão ASCII: substitui caracteres não-ASCII por '_'
+    $encodedName = rawurlencode($filename); // Versão UTF-8: codificada via RFC 5987 (percent-encoding da string UTF-8)
+
+    // Se o nome for puro ASCII, emite o formato simples com aspas duplas.
+    // Caso contrário, usa o parâmetro duplo: fallback ASCII + filename* (RFC 6266).
+    if ($asciiName === $filename) $headerValue = "{$disposition}; filename=\"{$asciiName}\"";
+    else $headerValue = "{$disposition}; filename=\"{$asciiName}\"; filename*=UTF-8''{$encodedName}";
+
+    return $headerValue;
+  }
 }
