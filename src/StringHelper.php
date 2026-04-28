@@ -608,6 +608,6 @@ class StringHelper
     if ($asciiName === $filename) $headerValue = "{$disposition}; filename=\"{$asciiName}\"";
     else $headerValue = "{$disposition}; filename=\"{$asciiName}\"; filename*=UTF-8''{$encodedName}";
 
-    return $headerValue;
+    return "Content-Disposition: {$headerValue}";
   }
 }
