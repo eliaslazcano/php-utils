@@ -175,7 +175,7 @@ abstract class DatabaseController
   public function insert(string $sql, array $bindParams = array()): string
   {
     if (strpos(strtoupper(substr($sql, 0, 11)), 'INSERT INTO') === false) $this->aoFalhar('Ausencia do comando INSERT', "SQL:$sql");
-    $this->query($sql, $bindParams);
+    $this->statementExecutado($sql, $bindParams);
     return $this->conexao->lastInsertId();
   }
 
