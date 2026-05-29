@@ -9,20 +9,24 @@ use PDOStatement;
 
 abstract class DatabaseController
 {
+  //Propriedades feitas para customizar por classe herdeira (override)
   protected $host;
   protected $usuario;
   protected $senha;
   protected $base_de_dados;
-  protected $charset = 'utf8mb4';
-  protected $collate = 'utf8mb4_general_ci';
-  protected $timezone = '-03:00';
-  protected $timeout = 20;
+  protected $charset = null;  // ex: 'utf8mb4';
+  protected $collate = null;  // ex: 'utf8mb4_general_ci';
+  protected $timezone = null; // ex: '-03:00'
+  protected $timeout = 16;
   protected $persistent = false;
 
-  /** @var PDO */
+  /** @var array Cache de conexões PDO ativas (Padrão Multiton) */
+  private static $conexoes = [];
+
+  /** @var PDO Conexao principal */
   private $conexao;
 
-  /** @var bool O resultados das consultas virão forçadamente com nome da coluna em caixa baixa */
+  /** @var bool Resultados das consultas virão forçadamente com nome da coluna em caixa baixa */
   public $forceColunasCaixaBaixa = false;
 
   /**
@@ -39,27 +43,35 @@ abstract class DatabaseController
    * @param string|null $collate - Regras para comparar e ordenar os caracteres do seu charset. Define se o sistema diferencia letras maiúsculas de minúsculas e como tratar acentos, ex: 'utf8mb4_general_ci'.
    * @return PDO
    */
-  public static function criarConexao(string $host, string $database, string $usuario, string $senha, int $timeout = 20, bool $persistent = false, bool $exception = true, ?string $timezone = null, ?string $charset = null, ?string $collate = null): PDO
+  public static function criarConexao(string $host, string $database, string $usuario, string $senha = '', int $timeout = 16, bool $persistent = false, bool $exception = true, ?string $timezone = null, ?string $charset = null, ?string $collate = null): PDO
   {
-    $dsn = "mysql:host=$host;dbname=$database";
-    if ($charset) $dsn .= ";charset=$charset";
-    $options = array(
-      PDO::ATTR_TIMEOUT => $timeout,
-      PDO::ATTR_PERSISTENT => $persistent,
-      PDO::ATTR_ERRMODE => $exception ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT,
-    );
-    $conn = new PDO($dsn, trim($usuario), trim($senha), $options);
-    if ($timezone) $conn->exec("SET time_zone='$timezone';");
-    if ($charset && $collate) $conn->exec("SET NAMES $charset COLLATE $collate");
-    return $conn;
+    $host = trim($host);
+    $database = trim($database);
+    $usuario = trim($usuario);
+    $senha = trim($senha);
+    $hash = md5("$host:$database:$usuario");
+    if (!isset(self::$conexoes[$hash])) {
+      $dsn = "mysql:host=$host;dbname=$database";
+      if ($charset) $dsn .= ";charset=$charset";
+      $options = array(
+        PDO::ATTR_TIMEOUT => $timeout,
+        PDO::ATTR_PERSISTENT => $persistent,
+        PDO::ATTR_ERRMODE => $exception ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT,
+      );
+      $conn = new PDO($dsn, $usuario, $senha, $options);
+      if ($timezone) $conn->exec("SET time_zone='$timezone';");
+      if ($charset && $collate) $conn->exec("SET NAMES $charset COLLATE $collate");
+      self::$conexoes[$hash] = $conn;
+    }
+
+    return self::$conexoes[$hash];
   }
 
   /**
    * @param PDO|null $conn Conexão PDO, caso queira aproveitar uma existente.
-   * @param bool|null $persistent Abre uma conexão persistente, evitando fechar quando a requisição acabar.
    * @throws Exception
    */
-  public function __construct(?PDO $conn = null, ?bool $persistent = null)
+  public function __construct(?PDO $conn = null)
   {
     if ($conn) $this->conexao = $conn;
     else {
@@ -70,7 +82,7 @@ abstract class DatabaseController
           $this->usuario,
           $this->senha,
           $this->timeout,
-          is_null($persistent) ? $this->persistent : $persistent,
+          $this->persistent,
           true,
           $this->timezone,
           $this->charset,
