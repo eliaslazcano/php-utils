@@ -290,7 +290,7 @@ abstract class DatabaseController
    */
   public function currentTimestamp(): ?string
   {
-    $resultado = $this->queryPrimeiraLinha('SELECT current_timestamp() AS datetime');
+    $resultado = $this->queryPrimeiraLinha('SELECT CURRENT_TIMESTAMP() AS datetime');
     return $resultado ? $resultado['datetime'] : null;
   }
 
@@ -320,19 +320,19 @@ abstract class DatabaseController
    * Exporta um array[][] para arquivo CSV
    * @param array<int, array<string, mixed>> $array
    * @param bool $incluirCabecalho O nome das colunas sera inserido na primeira linha do CSV.
-   * @param string $nome_do_arquivo Nome do arquivo que será sugerido para download ou gravado no disco.
+   * @param string $nomeArquivo Nome do arquivo que será sugerido para download ou gravado no disco.
    * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
    * @param string $separador Caractere que separa as colunas.
    */
-  public static function exportarCsv_deArray(array $array, bool $incluirCabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null, string $separador = ';')
+  public static function exportarCsv_deArray(array $array, bool $incluirCabecalho = true, string $nomeArquivo = 'exportar.csv', ?string $diretorio = null, string $separador = ';')
   {
     if (!$diretorio) {
       header('Content-Type: text/csv');
-      header('Content-Disposition: attachment; filename="'.$nome_do_arquivo.'"');
+      header('Content-Disposition: attachment; filename="'.$nomeArquivo.'"');
       header('Pragma: no-cache');
       header('Expires: 0');
     }
-    $resource = fopen($diretorio ? ($diretorio.'/'.$nome_do_arquivo) : 'php://output', 'w');
+    $resource = fopen($diretorio ? ($diretorio.'/'.$nomeArquivo) : 'php://output', 'w');
     if ($incluirCabecalho) {
       if (is_array($array[0])) fputcsv($resource, array_keys($array[0]), $separador);
       else fputcsv($resource, array_keys($array), $separador);
@@ -350,14 +350,14 @@ abstract class DatabaseController
    * Exporta uma query para um arquivo CSV.
    * @param string $sql Query de consulta.
    * @param bool $incluirCabecalho O nome das colunas sera inserido na primeira linha do CSV.
-   * @param string $nome_do_arquivo
+   * @param string $nomeArquivo
    * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
    * @throws Exception
    */
-  public function exportarCsv_deQuery(string $sql, bool $incluirCabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
+  public function exportarCsv_deQuery(string $sql, bool $incluirCabecalho = true, string $nomeArquivo = 'exportar.csv', ?string $diretorio = null)
   {
     $resultado = $this->query($sql);
-    self::exportarCsv_deArray($resultado, $incluirCabecalho, $nome_do_arquivo, $diretorio);
+    self::exportarCsv_deArray($resultado, $incluirCabecalho, $nomeArquivo, $diretorio);
   }
 
   /**
@@ -365,13 +365,13 @@ abstract class DatabaseController
    * @param string $tabela Nome da tabela.
    * @param string[] $colunas Nome das colunas. Se quiser todas, use NULL ou um array vazio.
    * @param boolean $incluirCabecalho O nome das colunas sera inserido na primeira linha do CSV.
-   * @param string $nome_do_arquivo
+   * @param string $nomeArquivo
    * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
    * @throws Exception
    */
-  public function exportarCsv_deTabela(string $tabela, array $colunas = array(), bool $incluirCabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
+  public function exportarCsv_deTabela(string $tabela, array $colunas = array(), bool $incluirCabecalho = true, string $nomeArquivo = 'exportar.csv', ?string $diretorio = null)
   {
     $str_colunas = $colunas ? implode(', ', $colunas) : '*';
-    $this->exportarCsv_deQuery("SELECT $str_colunas FROM $tabela", $incluirCabecalho, $nome_do_arquivo, $diretorio);
+    $this->exportarCsv_deQuery("SELECT $str_colunas FROM $tabela", $incluirCabecalho, $nomeArquivo, $diretorio);
   }
 }
