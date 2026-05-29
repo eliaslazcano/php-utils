@@ -2,6 +2,7 @@
 
 namespace Eliaslazcano\Helpers;
 
+use Exception;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -24,23 +25,59 @@ abstract class DatabaseController
   /** @var bool O resultados das consultas virão forçadamente com nome da coluna em caixa baixa */
   public $forceColunasCaixaBaixa = false;
 
+  /**
+   * Cria uma conexão com um banco de dados retornando uma instância do PDO.
+   * @param string $host - IP ou nome de Host para estabelecer a conexão de rede com o servidor.
+   * @param string $database - Nome da base de dados.
+   * @param string $usuario - Login de usuário.
+   * @param string $senha - Senha de usuário.
+   * @param int $timeout - Tempo limite para expirar a tentativa de iniciar a conexão.
+   * @param bool $persistent - Mantém a conexão aberta após o término da requisição.
+   * @param bool $exception - Cometer erros irá disparar exception.
+   * @param string|null $timezone - Fuso horário usado na conexão, ex: '-03:00'.
+   * @param string|null $charset - Conjunto de caracteres reconhecidos, ex: 'utf8mb4'.
+   * @param string|null $collate - Regras para comparar e ordenar os caracteres do seu charset. Define se o sistema diferencia letras maiúsculas de minúsculas e como tratar acentos, ex: 'utf8mb4_general_ci'.
+   * @return PDO
+   */
+  public static function criarConexao(string $host, string $database, string $usuario, string $senha, int $timeout = 20, bool $persistent = false, bool $exception = true, ?string $timezone = null, ?string $charset = null, ?string $collate = null): PDO
+  {
+    $dsn = "mysql:host=$host;dbname=$database";
+    if ($charset) $dsn .= ";charset=$charset";
+    $options = array(
+      PDO::ATTR_TIMEOUT => $timeout,
+      PDO::ATTR_PERSISTENT => $persistent,
+      PDO::ATTR_ERRMODE => $exception ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT,
+    );
+    $conn = new PDO($dsn, trim($usuario), trim($senha), $options);
+    if ($timezone) $conn->exec("SET time_zone='$timezone';");
+    if ($charset && $collate) $conn->exec("SET NAMES $charset COLLATE $collate");
+    return $conn;
+  }
+
+  /**
+   * @param PDO|null $conn Conexão PDO, caso queira aproveitar uma existente.
+   * @param bool|null $persistent Abre uma conexão persistente, evitando fechar quando a requisição acabar.
+   * @throws Exception
+   */
   public function __construct(?PDO $conn = null, ?bool $persistent = null)
   {
     if ($conn) $this->conexao = $conn;
     else {
-      $dsn = "mysql:host=$this->host;dbname=$this->base_de_dados";
-      if ($this->charset) $dsn .= ";charset=$this->charset";
-      $options = array(PDO::ATTR_TIMEOUT => $this->timeout, PDO::ATTR_PERSISTENT => $persistent ?? $this->persistent);
       try {
-        $conn = new PDO($dsn, trim($this->usuario), trim($this->senha), $options);
-        if ($this->timezone) $conn->exec("SET time_zone='$this->timezone';");
-        $this->conexao = $conn;
-        if ($this->charset && $this->collate && strpos($this->collate, $this->charset) !== false) {
-          $conn->exec("SET NAMES $this->charset COLLATE $this->collate");
-        }
+        $this->conexao = static::criarConexao(
+          $this->host,
+          $this->base_de_dados,
+          $this->usuario,
+          $this->senha,
+          $this->timeout,
+          is_null($persistent) ? $this->persistent : $persistent,
+          true,
+          $this->timezone,
+          $this->charset,
+          $this->collate
+        );
       } catch (PDOException $e) {
-        $exceptionMessage = $e->getMessage();
-        $this->aoFalhar($exceptionMessage, "Fracasso em abrir conexao com a base de dados. Exception->getMessage(): ($exceptionMessage)");
+        $this->aoFalhar($e);
       }
     }
   }
@@ -50,14 +87,18 @@ abstract class DatabaseController
     return $this->conexao;
   }
 
-  /**
-   * Comportamento em caso de falha.
-   * @param string $mensagem Mensagem para o usuario final.
-   * @param string|null $dadosLog Dados para eventualmente armazenar em um arquivo de log
-   */
-  protected function aoFalhar(string $mensagem, ?string $dadosLog = null)
+  public function getConn(): PDO
   {
-    trigger_error($mensagem, E_USER_ERROR);
+    return $this->getConexao();
+  }
+
+  /**
+   * Possibilita a classe herdeira personalizar o comportamento em caso de falhas.
+   * @throws Exception
+   */
+  protected function aoFalhar(Exception $e)
+  {
+    throw $e;
   }
 
   /**
@@ -93,21 +134,25 @@ abstract class DatabaseController
    * @param string $sql
    * @param array<string, mixed> $bindParams
    * @return PDOStatement
+   * @throws Exception
    */
   public function statementPreparado(string $sql, array $bindParams = array()): PDOStatement
   {
-    $statement = $this->conexao->prepare($sql);
-    if (!$statement) $this->aoFalhar(json_encode($this->conexao->errorInfo()), "SQL:$sql|PARAMS:" . json_encode($bindParams));
-    if (!empty($bindParams)) {
-      foreach ($bindParams as $key => $value) {
-        if (is_int($value)) $statement->bindValue($key, $value, PDO::PARAM_INT);
-        elseif (is_bool($value)) $statement->bindValue($key, $value, PDO::PARAM_BOOL);
-        elseif (is_null($value)) $statement->bindValue($key, $value, PDO::PARAM_NULL);
-        elseif (is_string($value)) $statement->bindValue($key, $value);
-        else $statement->bindValue($key, strval($value));
+    try {
+      $statement = $this->conexao->prepare($sql);
+      if (!empty($bindParams)) {
+        foreach ($bindParams as $key => $value) {
+          if (is_int($value)) $statement->bindValue($key, $value, PDO::PARAM_INT);
+          elseif (is_bool($value)) $statement->bindValue($key, $value, PDO::PARAM_BOOL);
+          elseif (is_null($value)) $statement->bindValue($key, $value, PDO::PARAM_NULL);
+          elseif (is_string($value)) $statement->bindValue($key, $value);
+          else $statement->bindValue($key, strval($value));
+        }
       }
+      return $statement;
+    } catch (PDOException $e) {
+      $this->aoFalhar($e);
     }
-    return $statement;
   }
 
   /**
@@ -115,12 +160,17 @@ abstract class DatabaseController
    * @param string $sql
    * @param array<string, mixed> $bindParams
    * @return PDOStatement
+   * @throws Exception
    */
   public function statementExecutado(string $sql, array $bindParams = array()): PDOStatement
   {
     $statement = $this->statementPreparado($sql, $bindParams);
-    if (!$statement->execute()) $this->aoFalhar(json_encode($statement->errorInfo()), "SQL:$sql|PARAMS:" . json_encode($bindParams));
-    return $statement;
+    try {
+      $statement->execute();
+      return $statement;
+    } catch (PDOException $e) {
+      $this->aoFalhar($e);
+    }
   }
 
   /**
@@ -129,20 +179,25 @@ abstract class DatabaseController
    * @param array $bindParams Parametros da query que serao substituidos exemplo: [':id' => $id]
    * @param array $colunasNumericas O nome das colunas que devem vir tipadas em numero.
    * @param array $colunasBoleanas O nome das colunas que devem vir tipadas em boleano.
-   * @param int $fetch_mode Modo FETCH do PDO
+   * @param int $fetchMode Modo FETCH do PDO
    * @return array<int, array<string, mixed>> array[linha]['coluna'].
+   * @throws Exception
    */
-  public function query(string $sql, array $bindParams = array(), array $colunasNumericas = array(), array $colunasBoleanas = array(), int $fetch_mode = PDO::FETCH_ASSOC): array
+  public function query(string $sql, array $bindParams = array(), array $colunasNumericas = array(), array $colunasBoleanas = array(), int $fetchMode = PDO::FETCH_ASSOC): array
   {
     $statement = $this->statementExecutado($sql, $bindParams);
-    $linhas = $statement->fetchAll($fetch_mode);
+    try {
+      $linhas = $statement->fetchAll($fetchMode);
 
-    # Ajusta a tipagem dos dados, pois o PDO retorna tudo em String (em versões anteriores ao PHP 8).
-    if ($this->forceColunasCaixaBaixa || !empty($colunasNumericas) || !empty($colunasBoleanas)) {
-      $linhas = $this->tiparMatriz($linhas, $colunasNumericas, $colunasBoleanas);
+      # Ajusta a tipagem dos dados, pois o PDO retorna tudo em String (em versões anteriores ao PHP 8).
+      if ($this->forceColunasCaixaBaixa || !empty($colunasNumericas) || !empty($colunasBoleanas)) {
+        $linhas = $this->tiparMatriz($linhas, $colunasNumericas, $colunasBoleanas);
+      }
+
+      return $linhas;
+    } catch (PDOException $e) {
+      $this->aoFalhar($e);
     }
-
-    return $linhas;
   }
 
   /**
@@ -151,19 +206,24 @@ abstract class DatabaseController
    * @param array $bindParams Parametros da query que serao substituidos exemplo: [':id' => $id]
    * @param array $colunasNumericas O nome das colunas que devem vir tipadas em numero.
    * @param array $colunasBoleanas O nome das colunas que devem vir tipadas em boleano.
-   * @param int $fetch_mode Modo FETCH do PDO
+   * @param int $fetchMode Modo FETCH do PDO
    * @return array<string, mixed>|null null caso nao tenha nenhuma linha no resultado.
+   * @throws Exception
    */
-  public function queryPrimeiraLinha(string $sql, array $bindParams = array(), array $colunasNumericas = array(), array $colunasBoleanas = array(), int $fetch_mode = PDO::FETCH_ASSOC): ?array
+  public function queryPrimeiraLinha(string $sql, array $bindParams = array(), array $colunasNumericas = array(), array $colunasBoleanas = array(), int $fetchMode = PDO::FETCH_ASSOC): ?array
   {
-    $linhas = $this->query($sql, $bindParams, $colunasNumericas, $colunasBoleanas, $fetch_mode);
+    $linhas = $this->query($sql, $bindParams, $colunasNumericas, $colunasBoleanas, $fetchMode);
     if (empty($linhas)) return null;
     else return $linhas[0];
   }
 
-  public function select(string $sql, array $bindParams = array(), array $colunasNumericas = array(), array $colunasBoleanas = array(), int $fetch_mode = PDO::FETCH_ASSOC): array
+  /**
+   * Atalho para função query.
+   * @throws Exception
+   */
+  public function select(string $sql, array $bindParams = array(), array $colunasNumericas = array(), array $colunasBoleanas = array(), int $fetchMode = PDO::FETCH_ASSOC): array
   {
-    return $this->query($sql, $bindParams, $colunasNumericas, $colunasBoleanas, $fetch_mode);
+    return $this->query($sql, $bindParams, $colunasNumericas, $colunasBoleanas, $fetchMode);
   }
 
   /**
@@ -171,10 +231,10 @@ abstract class DatabaseController
    * @param string $sql Instrucao SQL.
    * @param array $bindParams Valores para insercao.
    * @return string Chave primaria.
+   * @throws Exception
    */
   public function insert(string $sql, array $bindParams = array()): string
   {
-    if (strpos(strtoupper(substr($sql, 0, 11)), 'INSERT INTO') === false) $this->aoFalhar('Ausencia do comando INSERT', "SQL:$sql");
     $this->statementExecutado($sql, $bindParams);
     return $this->conexao->lastInsertId();
   }
@@ -184,6 +244,7 @@ abstract class DatabaseController
    * @param string $sql Instrução SQL com UPDATE.
    * @param array $bindParams Valores da instrução.
    * @return int Quantidade de linhas afetadas.
+   * @throws Exception
    */
   public function update(string $sql, array $bindParams = array()): int
   {
@@ -203,6 +264,7 @@ abstract class DatabaseController
   /**
    * Obtem a data atual do banco em formato "AAAA-MM-DD".
    * @return string|null
+   * @throws Exception
    */
   public function dateAtual(): ?string
   {
@@ -213,6 +275,7 @@ abstract class DatabaseController
   /**
    * Obtem a data-hora atual do banco em formato "AAAA-MM-DD hh:mm:ss".
    * @return string|null
+   * @throws Exception
    */
   public function datetimeAtual(): ?string
   {
@@ -223,6 +286,7 @@ abstract class DatabaseController
   /**
    * Obtem o timestamp atual do banco em formato "AAAA-MM-DD hh:mm:ss".
    * @return string|null
+   * @throws Exception
    */
   public function currentTimestamp(): ?string
   {
@@ -233,6 +297,7 @@ abstract class DatabaseController
   /**
    * Obtem o numero correspondente ao dia da semana, 1 = domingo ate 7 = sabado.
    * @return int|null
+   * @throws Exception
    */
   public function diaDaSemanaAtual(): ?int
   {
@@ -243,6 +308,7 @@ abstract class DatabaseController
   /**
    * Retorna a lista de tabelas existentes no banco de dados selecionado.
    * @return array<int, string> Lista contendo os nomes das tabelas no banco de dados.
+   * @throws Exception
    */
   public function tabelas(): array
   {
@@ -251,41 +317,14 @@ abstract class DatabaseController
   }
 
   /**
-   * Exporta os dados de uma tabela do banco de dados para um arquivo CSV.
-   * @param string $tabela Nome da tabela.
-   * @param string[] $colunas Nome das colunas. Se quiser todas, use NULL ou um array vazio.
-   * @param boolean $incluir_cabecalho O nome das colunas sera inserido na primeira linha do CSV.
-   * @param string $nome_do_arquivo
-   * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
-   */
-  public function exportarCsv_deTabela(string $tabela, array $colunas = array(), bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
-  {
-    $str_colunas = $colunas ? implode(', ', $colunas) : '*';
-    $this->exportarCsv_deQuery("SELECT $str_colunas FROM $tabela", $incluir_cabecalho, $nome_do_arquivo, $diretorio);
-  }
-
-  /**
-   * Exporta uma query para um arquivo CSV.
-   * @param string $sql Query de consulta.
-   * @param bool $incluir_cabecalho O nome das colunas sera inserido na primeira linha do CSV.
-   * @param string $nome_do_arquivo
-   * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
-   */
-  public function exportarCsv_deQuery(string $sql, bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
-  {
-    $resultado = $this->query($sql);
-    self::exportarCsv_deArray($resultado, $incluir_cabecalho, $nome_do_arquivo, $diretorio);
-  }
-
-  /**
    * Exporta um array[][] para arquivo CSV
    * @param array<int, array<string, mixed>> $array
-   * @param bool $incluir_cabecalho O nome das colunas sera inserido na primeira linha do CSV.
+   * @param bool $incluirCabecalho O nome das colunas sera inserido na primeira linha do CSV.
    * @param string $nome_do_arquivo Nome do arquivo que será sugerido para download ou gravado no disco.
    * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
    * @param string $separador Caractere que separa as colunas.
    */
-  public static function exportarCsv_deArray(array $array, bool $incluir_cabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null, string $separador = ';')
+  public static function exportarCsv_deArray(array $array, bool $incluirCabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null, string $separador = ';')
   {
     if (!$diretorio) {
       header('Content-Type: text/csv');
@@ -294,7 +333,7 @@ abstract class DatabaseController
       header('Expires: 0');
     }
     $resource = fopen($diretorio ? ($diretorio.'/'.$nome_do_arquivo) : 'php://output', 'w');
-    if ($incluir_cabecalho) {
+    if ($incluirCabecalho) {
       if (is_array($array[0])) fputcsv($resource, array_keys($array[0]), $separador);
       else fputcsv($resource, array_keys($array), $separador);
     }
@@ -305,5 +344,34 @@ abstract class DatabaseController
     }
     fclose($resource);
     if (!$diretorio) die();
+  }
+
+  /**
+   * Exporta uma query para um arquivo CSV.
+   * @param string $sql Query de consulta.
+   * @param bool $incluirCabecalho O nome das colunas sera inserido na primeira linha do CSV.
+   * @param string $nome_do_arquivo
+   * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
+   * @throws Exception
+   */
+  public function exportarCsv_deQuery(string $sql, bool $incluirCabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
+  {
+    $resultado = $this->query($sql);
+    self::exportarCsv_deArray($resultado, $incluirCabecalho, $nome_do_arquivo, $diretorio);
+  }
+
+  /**
+   * Exporta os dados de uma tabela do banco de dados para um arquivo CSV.
+   * @param string $tabela Nome da tabela.
+   * @param string[] $colunas Nome das colunas. Se quiser todas, use NULL ou um array vazio.
+   * @param boolean $incluirCabecalho O nome das colunas sera inserido na primeira linha do CSV.
+   * @param string $nome_do_arquivo
+   * @param string|null $diretorio Local para salvar o arquivo, NULL realiza o download no browser do cliente.
+   * @throws Exception
+   */
+  public function exportarCsv_deTabela(string $tabela, array $colunas = array(), bool $incluirCabecalho = true, string $nome_do_arquivo = 'exportar.csv', ?string $diretorio = null)
+  {
+    $str_colunas = $colunas ? implode(', ', $colunas) : '*';
+    $this->exportarCsv_deQuery("SELECT $str_colunas FROM $tabela", $incluirCabecalho, $nome_do_arquivo, $diretorio);
   }
 }
