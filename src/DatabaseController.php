@@ -7,7 +7,7 @@ use PDO;
 use PDOException;
 use PDOStatement;
 
-abstract class DatabaseController
+class DatabaseController
 {
   //Propriedades feitas para customizar por classe herdeira (override)
   protected $host;
