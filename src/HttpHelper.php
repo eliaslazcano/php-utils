@@ -102,42 +102,42 @@ abstract class HttpHelper
   {
     $dados = array();
     $raw_data = file_get_contents('php://input');
-    $boundary = substr($raw_data, 0, strpos($raw_data, "\r\n"));
+    $boundaryPos = strpos($raw_data, "\r\n");
+    if ($boundaryPos === false) return $dados;
+    $boundary = substr($raw_data, 0, $boundaryPos);
     if (!$boundary) return $dados;
 
     $parts = array_slice(explode($boundary, $raw_data), 1);
 
     foreach ($parts as $part) {
       if ($part == "--\r\n") break;
-
       $part = ltrim($part, "\r\n");
-      list($raw_headers, $body) = explode("\r\n\r\n", $part, 2);
 
-      $raw_headers = explode("\r\n", $raw_headers);
+      $sepPos = strpos($part, "\r\n\r\n");
+      if ($sepPos === false) continue; //Parte sem separador headers/body, ignora.
+      $raw_headers = substr($part, 0, $sepPos);
+      $body = substr($part, $sepPos + 4);
+
       $headers = array();
-      foreach ($raw_headers as $header) {
-        list($name, $value) = explode(':', $header);
-        $headers[strtolower($name)] = ltrim($value, ' ');
+      foreach (explode("\r\n", $raw_headers) as $header) {
+        $colonPos = strpos($header, ':');
+        if ($colonPos === false) continue; //Header malformado, ignora.
+        $name = strtolower(substr($header, 0, $colonPos));
+        $value = ltrim(substr($header, $colonPos + 1), ' ');
+        $headers[$name] = $value;
       }
 
       if (isset($headers['content-disposition'])) {
-        $filename = null;
         preg_match(
           '/^(.+); *name="([^"]+)"(; *filename="([^"]+)")?/',
           $headers['content-disposition'],
           $matches
         );
-        list(, , $name) = $matches;
-        isset($matches[4]) and $filename = $matches[4];
-
-        switch ($name) {
-          case 'userfile':
-            file_put_contents($filename, $body);
-            break;
-          default:
-            $dados[$name] = substr($body, 0, strlen($body) - 2);
-            break;
-        }
+        if (!isset($matches[2])) continue; //Nao foi possivel extrair o "name" do campo, ignora esta parte.
+        $name = $matches[2];
+        //Nota: mesmo quando o campo tem "filename" (upload), apenas o conteudo eh devolvido.
+        //Esta funcao nunca grava nada em disco.
+        $dados[$name] = substr($body, 0, strlen($body) - 2);
       }
     }
     return $dados;
@@ -303,7 +303,6 @@ abstract class HttpHelper
    */
   public static function validarMetodos(array $metodos = ['GET','POST','PUT','DELETE'], bool $emitirErro = true, ?string $headerAllowOrigin = null, ?string $headerAllowHeaders = null, ?bool $headerAllowCredentials = null): bool
   {
-    if (gettype($metodos) !== 'array') self::erroJson(400, "validarMetodos() precisa receber um array de string no primeiro parametro");
     if (count($metodos) === 0) self::erroJson(400, "validarMetodos() precisa receber ao menos 1 metodo http no array do primeiro parametro");
 
     $metodos = array_map(function ($metodo) { return strtoupper($metodo); }, $metodos); //Passa para caixa alta.
@@ -568,7 +567,7 @@ abstract class HttpHelper
   /**
    * Executa uma instancia CURL e retorna varias informacoes de seu resultado.
    * @param resource $curl Instancia CURL criada por curl_init().
-   * @return array|null Em caso de falha retorna false. Sucesso retorna array no formato ['code' => int, 'type' => string, 'size' => int, 'body' => mixed, 'json' => bool].
+   * @return array|null Em caso de falha retorna null. Sucesso retorna array no formato ['code' => int, 'type' => string, 'size' => int, 'body' => mixed, 'json' => bool].
    */
   private static function execCurl($curl): ?array
   {
@@ -629,7 +628,8 @@ abstract class HttpHelper
    */
   public static function curlPost(string $url, $data = null, array $headers = [], int $timeout = 30): ?array
   {
-    $headers[] = is_array($data) ? 'Content-Type: multipart/form-data' : 'Content-Type: application/json; charset=utf-8';
+    //Para multipart o cURL define o Content-Type (com boundary correto) automaticamente ao receber array em CURLOPT_POSTFIELDS.
+    if (!is_array($data)) $headers[] = 'Content-Type: application/json; charset=utf-8';
     $curl = curl_init();
     curl_setopt_array($curl, array(
       CURLOPT_URL => $url,
@@ -669,7 +669,7 @@ abstract class HttpHelper
 
     $texto = '[' . date('Y-m-d H:i:s') . ' ' . self::obterIp() . ' ' . self::getHeader('Content-Type') . '] ' . trim($texto) . PHP_EOL;
     $sucesso = file_put_contents($fullPath, $texto, FILE_APPEND);
-    if (!$sucesso) return 'Não foi possível gravar o arquivo de log';
+    if ($sucesso === false) return 'Não foi possível gravar o arquivo de log';
     return null;
   }
 
@@ -692,6 +692,11 @@ abstract class HttpHelper
     $mainDir = rtrim($mainDir, '/');
     $url = $_SERVER['PATH_INFO'] ?? ($_SERVER['ORIG_PATH_INFO'] ?? null);
     $caminhoLocal = $url ? trim($url,'/') : null;
+
+    //Bloqueia tentativas de path traversal (ex: ../../etc/passwd) antes de qualquer file_exists/require.
+    if ($caminhoLocal !== null && strpos($caminhoLocal, '..') !== false) {
+      self::erroJson(404, $noRouteMessage);
+    }
 
     if ($caminhoLocal && file_exists("$mainDir/$caminhoLocal.php")) {
       return require "$mainDir/$caminhoLocal.php";
