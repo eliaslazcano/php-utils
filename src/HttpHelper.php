@@ -331,27 +331,30 @@ abstract class HttpHelper
   public static function obterParametro(string $nome)
   {
     if (self::isJson()) {
-      $dados = json_decode(file_get_contents('php://input'), true);
-      if (array_key_exists($nome, $dados)) return $dados[$nome];
-      else return null;
+      $contents = file_get_contents('php://input');
+      if (empty($contents)) return null;
+      $dados = json_decode($contents, true);
+      if (!is_array($dados)) return null;
+      return array_key_exists($nome, $dados) ? $dados[$nome] : null;
     } else {
       switch (self::getMethod()) {
         case "DELETE":
         case "GET":
-          if (!isset($_GET[$nome])) return null;
-          else return $_GET[$nome];
+          if (isset($_GET[$nome])) return $_GET[$nome];
+          break;
         case "POST":
-          if (!isset($_POST[$nome]) && !isset($_FILES[$nome])) return null;
-          else return (isset($_FILES[$nome])) ? $_FILES[$nome] : $_POST[$nome];
+          if (isset($_FILES[$nome])) return $_FILES[$nome];
+          if (isset($_POST[$nome])) return $_POST[$nome];
+          break;
         case "PUT":
         case "PATCH":
+          if (isset($_FILES[$nome])) return $_FILES[$nome];
           $dados = self::getFormData();
-          if (!isset($dados[$nome]) && !isset($_FILES[$nome])) return null;
-          else return (isset($_FILES[$nome])) ? $_FILES[$nome] : $dados[$nome];
-        default:
-          return null;
+          if (isset($dados[$nome])) return $dados[$nome];
+          break;
       }
     }
+    return null;
   }
 
   /**
