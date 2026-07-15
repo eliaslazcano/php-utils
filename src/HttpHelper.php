@@ -335,7 +335,7 @@ abstract class HttpHelper
       if (empty($contents)) return null;
       $dados = json_decode($contents, true);
       if (!is_array($dados)) return null;
-      return array_key_exists($nome, $dados) ? $dados[$nome] : null;
+      if (array_key_exists($nome, $dados)) return $dados[$nome];
     } else {
       switch (self::getMethod()) {
         case "DELETE":
@@ -377,32 +377,35 @@ abstract class HttpHelper
    * Funciona com dados em FormData e JSON.
    * @param string $nome identificacao do parametro.
    * @param string $mensagemErro mensagem de erro quando o parametro nao existir.
-   * @return mixed|null
+   * @return mixed|null|never-return
    */
   public static function validarParametro(string $nome, string $mensagemErro = 'Faltam dados na requisicao')
   {
     if (self::isJson()) {
-      $dados = json_decode(file_get_contents('php://input'), true);
-      if (!array_key_exists($nome, $dados)) self::erroJson(400, $mensagemErro, 0, $nome);
-      return $dados[$nome];
+      $contents = file_get_contents('php://input');
+      if (empty($contents)) self::erroJson(400, $mensagemErro, 0, $nome);
+      $dados = json_decode($contents, true);
+      if (!is_array($dados)) self::erroJson(400, $mensagemErro, 0, $nome);
+      if (array_key_exists($nome, $dados)) return $dados[$nome];
     } else {
       switch (self::getMethod()) {
         case "DELETE":
         case "GET":
-          if (!isset($_GET[$nome])) self::erroJson(400, $mensagemErro, 0, $nome);
-          return $_GET[$nome];
+          if (isset($_GET[$nome])) return $_GET[$nome];
+          break;
         case "POST":
-          if (!isset($_POST[$nome]) && !isset($_FILES[$nome])) self::erroJson(400, $mensagemErro, 0, $nome);
-          return (isset($_FILES[$nome])) ? $_FILES[$nome] : $_POST[$nome];
+          if (isset($_FILES[$nome])) return $_FILES[$nome];
+          if (isset($_POST[$nome])) return $_POST[$nome];
+          break;
         case "PUT":
         case "PATCH":
+          if (isset($_FILES[$nome])) return $_FILES[$nome];
           $dados = self::getFormData();
-          if (!isset($dados[$nome]) && !isset($_FILES[$nome])) self::erroJson(400, $mensagemErro, 0, $nome);
-          return (isset($_FILES[$nome])) ? $_FILES[$nome] : $dados[$nome];
-        default:
-          return null;
+          if (isset($dados[$nome])) return $dados[$nome];
+          break;
       }
     }
+    self::erroJson(400, $mensagemErro, 0, $nome);
   }
 
   /**
