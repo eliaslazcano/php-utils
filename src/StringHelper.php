@@ -10,6 +10,7 @@ namespace Eliaslazcano\Helpers;
 use DateTime;
 use DateInterval;
 use Exception;
+use InvalidArgumentException;
 
 class StringHelper
 {
@@ -499,40 +500,70 @@ class StringHelper
    */
   public static function validarCPF(string $cpf): bool
   {
-    $sanitizedCpf = preg_replace('/\D/', '', $cpf);
-    $invalidCpfPatterns = array(
-      '00000000000',
-      '11111111111',
-      '22222222222',
-      '33333333333',
-      '44444444444',
-      '55555555555',
-      '66666666666',
-      '77777777777',
-      '88888888888',
-      '99999999999',
-    );
+    // Remove a máscara, mantendo apenas dígitos
+    $cpf = preg_replace('/[^0-9]/', '', (string) $cpf);
 
-    if (strlen($sanitizedCpf) !== 11 || in_array($sanitizedCpf, $invalidCpfPatterns)) return false;
+    // Rejeita sequências repetidas (111.111.111-11, etc.)
+    if (preg_match('/^(\d)\1{10}$/', $cpf)) return false;
 
-    // Valida 1o digito
-    $add = 0;
-    for ($i = 0; $i < 9; $i++) {
-      $add += intval($sanitizedCpf[$i]) * (10 - $i);
+    for ($t = 9; $t < 11; $t++) {
+      $soma = 0;
+      for ($i = 0; $i < $t; $i++) {
+        $soma += $cpf[$i] * (($t + 1) - $i);
+      }
+      $digito = (($soma * 10) % 11) % 10;
+      if ($cpf[$t] != $digito) return false;
     }
-    $rev = 11 - ($add % 11);
-    if ($rev === 10 || $rev === 11) $rev = 0;
-    if ($rev !== intval($sanitizedCpf[9])) return false;
 
-    // Valida 2o digito
-    $add = 0;
-    for ($i = 0; $i < 10; $i++) {
-      $add += intval($sanitizedCpf[$i]) * (11 - $i);
+    return true;
+  }
+
+  /**
+   * Valida CNPJ numérico ou alfanumérico (14 caracteres, sem máscara).
+   * Regra: 12 primeiras posições podem ser [0-9A-Z]; as 2 últimas
+   * (dígitos verificadores) são sempre numéricas.
+   * @param string $cnpj
+   * @return bool
+   */
+  public static function validarCnpj(string $cnpj): bool
+  {
+    // Remove a máscara, mantendo apenas letras e dígitos
+    $cnpj = preg_replace('/[^0-9a-zA-Z]/', '', (string) $cnpj);
+
+    // Formato: 12 caracteres alfanuméricos + 2 dígitos numéricos
+    if (!preg_match('/^[0-9A-Z]{12}[0-9]{2}$/', $cnpj)) return false;
+
+    // Rejeita sequências de um mesmo caractere repetido
+    if (preg_match('/^(.)\1{13}$/', $cnpj)) return false;
+
+    // Converte cada caractere para seu valor numérico (ASCII - 48)
+    // '0'-'9' => 0-9 | 'A' => 17, 'B' => 18 ... 'Z' => 42
+    $valores = array();
+    for ($i = 0; $i < 14; $i++) {
+      $valores[$i] = ord($cnpj[$i]) - 48;
     }
-    $rev = 11 - ($add % 11);
-    if ($rev === 10 || $rev === 11) $rev = 0;
 
-    return $rev === intval($sanitizedCpf[10]);
+    // Primeiro dígito verificador
+    $pesos1 = array(5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2);
+    $soma = 0;
+    for ($i = 0; $i < 12; $i++) {
+      $soma += $valores[$i] * $pesos1[$i];
+    }
+    $resto = $soma % 11;
+    $digito1 = ($resto < 2) ? 0 : 11 - $resto;
+
+    if ($valores[12] != $digito1) return false;
+
+    // Segundo dígito verificador
+    $pesos2 = array(6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2);
+    $soma = 0;
+    for ($i = 0; $i < 13; $i++) {
+      $soma += $valores[$i] * $pesos2[$i];
+    }
+    $resto = $soma % 11;
+    $digito2 = ($resto < 2) ? 0 : 11 - $resto;
+
+    return $valores[13] == $digito2;
   }
 
   /**
@@ -609,5 +640,31 @@ class StringHelper
     else $headerValue = "{$disposition}; filename=\"{$asciiName}\"; filename*=UTF-8''{$encodedName}";
 
     return "Content-Disposition: {$headerValue}";
+  }
+
+  /**
+   * Converte o tamanho em bytes para leitura humanizada.
+   * @param int  $bytes  Tamanho em bytes.
+   * @param bool $binary Define se usa base 1024 (binário) ou 1000 (decimal).
+   * @return string
+   */
+  public static function tamanhoHumanizado(int $bytes, bool $binary = true): string
+  {
+    if ($bytes < 0) throw new InvalidArgumentException('Tamanho em bytes não pode ser negativo.');
+
+    $base    = $binary ? 1024 : 1000;
+    $prefixo  = array('K', 'M', 'G', 'T', 'P', 'E');
+    $total   = count($prefixo);
+
+    if ($bytes < $base) return "$bytes B";
+
+    $unidade = 0;
+    while ($unidade < $total - 1 && $bytes >= $base) {
+      $bytes /= $base;
+      $unidade++;
+    }
+
+    $formatado = (fmod($bytes, 1.0) < 0.005) ? (int) round($bytes) : number_format($bytes, 2);
+    return "$formatado {$prefixo[$unidade - 1]}B";
   }
 }
