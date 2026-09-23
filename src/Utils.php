@@ -39,12 +39,13 @@ class Utils
   public static function getAllUploadedFiles():array
   {
     $arquivos = [];
-    foreach ($_FILES as $file) {
+    foreach ($_FILES as $key => $file) {
       if (is_string($file['tmp_name'])) $arquivos[] = $file;
       else {
         $qtd = count($file['tmp_name']);
         for ($i = 0; $i < $qtd; $i++) {
           $arquivos[] = [
+            'key' => $key,
             'name' => $file['name'][$i],
             'type' => $file['type'][$i],
             'tmp_name' => $file['tmp_name'][$i],
