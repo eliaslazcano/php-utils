@@ -78,9 +78,7 @@ class StringHelper
   {
     $array = array();
     preg_match_all('/[^0-9]+/', $string, $array);
-    return array_reduce($array[0], function ($carry, $item) {
-      return $carry . $item;
-    });
+    return implode('', $array[0]);
   }
 
   /**
@@ -102,9 +100,7 @@ class StringHelper
   {
     $array = array();
     preg_match_all('/[0-9]+/', $string, $array);
-    return array_reduce($array[0], function ($carry, $item) {
-      return $carry . $item;
-    });
+    return implode('', $array[0]);
   }
 
   /**
@@ -125,7 +121,7 @@ class StringHelper
   public static function extrairAlfanumericos(string|int|float|bool|null $valor, bool $caixaAlta = true): string
   {
     $texto = (string) ($valor ?? '');
-    if ($caixaAlta) $texto = mb_strtoupper($texto, 'UTF-8');
+    if ($caixaAlta) $texto = self::toUpperCase($texto, false);
     return preg_replace('/[^A-Za-z0-9]/', '', $texto);
   }
 
@@ -139,9 +135,7 @@ class StringHelper
     $string = self::removeAccents($string);
     $array = array();
     preg_match_all('/[a-zA-Z]+/', $string, $array);
-    return array_reduce($array[0], function ($carry, $item) {
-      return $carry . $item;
-    });
+    return implode('', $array[0]);
   }
 
   /**
@@ -276,7 +270,8 @@ class StringHelper
 
     $data_explodida = explode($separador, $data);
     if (count($data_explodida) !== 3) return null;
-    return (strlen($data_explodida[0]) === 1 ? '0' . $data_explodida[0] : $data_explodida[0]) . $separador . (strlen($data_explodida[1]) === 1 ? '0' . $data_explodida[1] : $data_explodida[1]) . $separador . (strlen($data_explodida[2]) === 1 ? '0' . $data_explodida[2] : $data_explodida[2]);
+    $data_explodida = array_map(fn($parte) => str_pad($parte, 2, '0', STR_PAD_LEFT), $data_explodida);
+    return implode($separador, $data_explodida);
   }
 
   /**
@@ -286,7 +281,6 @@ class StringHelper
    */
   public static function formatPhone(string $num): string
   {
-    if (!is_string($num)) $num = strval($num);
     $num = self::extractNumbers($num);
     $tamanho = strlen($num);
     if ($tamanho === 8) return substr_replace($num, '-', 4, 0);
@@ -362,25 +356,9 @@ class StringHelper
    */
   public static function diaDaSemana(?int $dia = null): string
   {
+    $dias = ['Domingo', 'Segunda-Feira', 'Terça-Feira', 'Quarta-Feira', 'Quinta-Feira', 'Sexta-Feira', 'Sábado'];
     $dia_da_semana = intval($dia !== null ? $dia : date('w'));
-    switch ($dia_da_semana) {
-      case 0:
-        return 'Domingo';
-      case 1:
-        return 'Segunda-Feira';
-      case 2:
-        return 'Terça-Feira';
-      case 3:
-        return 'Quarta-Feira';
-      case 4:
-        return 'Quinta-Feira';
-      case 5:
-        return 'Sexta-Feira';
-      case 6:
-        return 'Sábado';
-      default:
-        return '';
-    }
+    return $dias[$dia_da_semana] ?? '';
   }
 
   /**
@@ -402,36 +380,9 @@ class StringHelper
    */
   public static function mesDoAno(?int $numero_do_mes = null): string
   {
-    if ($numero_do_mes && !is_int($numero_do_mes)) $numero_do_mes = intval($numero_do_mes);
+    $meses = [1 => 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     $numero_do_mes = $numero_do_mes ?: intval(date('m'));
-    switch ($numero_do_mes) {
-      case 1:
-        return 'Janeiro';
-      case 2:
-        return 'Fevereiro';
-      case 3:
-        return 'Março';
-      case 4:
-        return 'Abril';
-      case 5:
-        return "Maio";
-      case 6:
-        return 'Junho';
-      case 7:
-        return 'Julho';
-      case 8:
-        return 'Agosto';
-      case 9:
-        return 'Setembro';
-      case 10:
-        return 'Outubro';
-      case 11:
-        return 'Novembro';
-      case 12:
-        return 'Dezembro';
-      default:
-        return '';
-    }
+    return $meses[$numero_do_mes] ?? '';
   }
 
   /**
@@ -593,7 +544,6 @@ class StringHelper
    */
   public static function validarCelular(string $telefone, bool $exigirDDD = true): bool
   {
-    if (!is_string($telefone)) $telefone = strval($telefone);
     $num = self::extractNumbers($telefone);
     $num = ltrim($num, '0');
     $tamanho = strlen($num);
