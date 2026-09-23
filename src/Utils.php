@@ -40,7 +40,7 @@ class Utils
   {
     $arquivos = [];
     foreach ($_FILES as $key => $file) {
-      if (is_string($file['tmp_name'])) $arquivos[] = $file;
+      if (is_string($file['tmp_name'])) $arquivos[] = ['key' => $key] + $file;
       else {
         $qtd = count($file['tmp_name']);
         for ($i = 0; $i < $qtd; $i++) {
