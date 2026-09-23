@@ -72,14 +72,13 @@ class StringHelper
   /**
    * Remove caracteres numericos da string.
    * @param string $string
-   * @param bool $separadosEmArray
-   * @return string|string[]
+   * @return string
    */
-  public static function removeNumbers(string $string, bool $separadosEmArray = false)
+  public static function removeNumbers(string $string): string
   {
     $array = array();
     preg_match_all('/[^0-9]+/', $string, $array);
-    return ($separadosEmArray) ? $array[0] : array_reduce($array[0], function ($carry, $item) {
+    return array_reduce($array[0], function ($carry, $item) {
       return $carry . $item;
     });
   }
@@ -95,32 +94,52 @@ class StringHelper
   }
 
   /**
-   * Extraia os numeros presentes na string
+   * Extrai os números presentes na string
    * @param string $string
-   * @param bool $separadosEmArray
-   * @return string|string[]
+   * @return string
    */
-  public static function extractNumbers(string $string, bool $separadosEmArray = false)
+  public static function extractNumbers(string $string): string
   {
     $array = array();
     preg_match_all('/[0-9]+/', $string, $array);
-    return ($separadosEmArray) ? $array[0] : array_reduce($array[0], function ($carry, $item) {
+    return array_reduce($array[0], function ($carry, $item) {
       return $carry . $item;
     });
   }
 
   /**
+   * Alias de extractNumbers: extrai os números presentes na string
+   * @param string $string
+   * @return string
+   */
+  public static function extrairNumeros(string $string): string
+  {
+    return static::extractNumbers($string);
+  }
+
+  /**
+   * @param string|int|float|bool|null $valor
+   * @param bool $caixaAlta Converte a saída para caixa-alta.
+   * @return string
+   */
+  public static function extrairAlfanumericos(string|int|float|bool|null $valor, bool $caixaAlta = true): string
+  {
+    $texto = (string) ($valor ?? '');
+    if ($caixaAlta) $texto = mb_strtoupper($texto, 'UTF-8');
+    return preg_replace('/[^A-Za-z0-9]/', '', $texto);
+  }
+
+  /**
    * Extraia as letras da string. Letras com acento sao convertidas para letras sem acento.
    * @param string $string
-   * @param bool $separadosEmArray
-   * @return string|string[]
+   * @return string
    */
-  public static function extractLetters(string $string, bool $separadosEmArray = false)
+  public static function extractLetters(string $string): string
   {
     $string = self::removeAccents($string);
     $array = array();
     preg_match_all('/[a-zA-Z]+/', $string, $array);
-    return ($separadosEmArray) ? $array[0] : array_reduce($array[0], function ($carry, $item) {
+    return array_reduce($array[0], function ($carry, $item) {
       return $carry . $item;
     });
   }
