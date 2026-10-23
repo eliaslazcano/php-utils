@@ -188,6 +188,7 @@ class StringHelper
     foreach ($mascara_chars as &$char) {
       if ($char === '#' && isset($texto[++$indice])) $char = $texto[$indice];
     }
+    unset($char); // evita vazamento da referencia
 
     return implode('', $mascara_chars);
   }
@@ -473,6 +474,9 @@ class StringHelper
     // Remove a máscara, mantendo apenas dígitos
     $cpf = preg_replace('/[^0-9]/', '', (string) $cpf);
 
+    // Precisa ter exatamente 11 digitos
+    if (strlen($cpf) !== 11) return false;
+
     // Rejeita sequências repetidas (111.111.111-11, etc.)
     if (preg_match('/^(\d)\1{10}$/', $cpf)) return false;
 
@@ -534,6 +538,27 @@ class StringHelper
     $digito2 = ($resto < 2) ? 0 : 11 - $resto;
 
     return $valores[13] == $digito2;
+  }
+
+  /**
+   * Verifica se uma string é um CPF válido ou um CNPJ válido
+   * (formato numérico tradicional ou o novo formato alfanumérico da Receita).
+   * Aceita com ou sem máscara (pontos, traços, barras).
+   * @param string $cpfCnpj
+   * @return bool
+   */
+  public static function validarCpfCnpj(string $cpfCnpj): bool
+  {
+    $limpo = self::extrairAlfanumericos($cpfCnpj);
+    $tamanho = strlen($limpo);
+
+    if ($tamanho == 11) {
+      return self::validarCPF($limpo);
+    } elseif ($tamanho == 14) {
+      return self::validarCnpj($limpo);
+    }
+
+    return false;
   }
 
   /**
