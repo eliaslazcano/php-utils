@@ -513,23 +513,73 @@ abstract class HttpHelper
   }
 
   /**
-   * Realiza o download de um arquivo a partir de uma string binaria. Esta funcao encerra o script.
+   * Envia um conteúdo em memória ao navegador como arquivo (exibição inline ou download).
+   *
+   * Descarta qualquer saída que esteja pendente nos buffers, envia os headers HTTP
+   * apropriados (tipo, tamanho, nome do arquivo em ASCII e em UTF-8 conforme a RFC 6266,
+   * proteção contra MIME sniffing e desativação de cache) e então emite o conteúdo.
+   *
+   * O conteúdo inteiro fica em memória; para arquivos grandes que já estão em disco,
+   * prefira uma abordagem com readfile()/fpassthru().
+   *
+   * Se $exit for false, quem chama NÃO pode emitir mais nenhuma saída depois desta
+   * chamada (templates, barras de debug etc.): qualquer byte extra ultrapassa o
+   * Content-Length e pode corromper o arquivo ou a conexão.
+   *
+   * @param string $conteudo Conteúdo binário ou textual do arquivo.
+   * @param string $nome     Nome sugerido ao navegador, com extensão (ex.: "relatório.pdf").
+   *                         Aceita acentos; nomes vazios viram "arquivo".
+   * @param string $mime     Tipo MIME do conteúdo (ex.: "application/pdf").
+   * @param bool   $inline   true para exibir no navegador quando possível;
+   *                         false para forçar o download.
+   * @param bool   $exit     true para encerrar o script logo após o envio.
+   *
+   * @return void Não retorna quando $exit é true.
+   *
+   * @throws \RuntimeException Se os headers já tiverem sido enviados.
+   *
+   * @example Helper::emitirArquivo($pdf, 'relatório mensal.pdf', 'application/pdf');
+   * @example Helper::emitirArquivo($csv, 'dados.csv', 'text/csv', inline: false);
+   */
+  public static function emitirArquivo(string $conteudo, string $nome, string $mime = 'application/octet-stream', bool $inline = true, bool $exit = true): void
+  {
+    if (headers_sent($arquivo, $linha)) throw new \RuntimeException("Headers já enviados em $arquivo:$linha");
+    while (ob_get_level() > 0) {
+      if (!ob_end_clean()) break; // Descarta saídas pendentes (espaços, BOM, echo perdido) que corromperiam o arquivo
+    }
+
+    $nome = mb_scrub(trim($nome), 'UTF-8') ?: 'arquivo';
+    $nomeAscii = preg_replace('/[^\x20-\x7E]|["\\\\]/u', '_', $nome) ?? 'arquivo'; // Reserva em ASCII para clientes antigos; os modernos usam o filename*
+    $disposition = $inline ? 'inline' : 'attachment';
+
+    header("Content-Type: $mime");
+    header('Content-Length: ' . strlen($conteudo));
+    header(sprintf(
+      "Content-Disposition: %s; filename=\"%s\"; filename*=UTF-8''%s",
+      $disposition,
+      $nomeAscii,
+      rawurlencode($nome)
+    ));
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: private, no-store, max-age=0');
+
+    echo $conteudo;
+    if ($exit) exit;
+  }
+
+  /**
+   * Mantido apenas para retrocompatibilidade.
    * @param string $binaryString
    * @param string $contentType
    * @param int $contentLength
    * @param string $filename
    * @param bool $inline
+   * @deprecated 1.4.3 Use emitirArquivo() no lugar desta função.
    * @return never-return
    */
   public static function downloadBinary(string $binaryString, string $contentType, int $contentLength, string $filename, bool $inline = true)
   {
-    $filename = str_replace(' ', '_', trim($filename));
-    $disposition = $inline ? 'inline' : 'attachment';
-    if ($contentType) header('Content-Type: ' . $contentType);
-    if ($contentLength) header('Content-Length: ' . $contentLength);
-    if ($filename) header('Content-Disposition: ' . $disposition . '; filename="' . $filename . '"');
-    echo $binaryString;
-    die();
+    self::emitirArquivo($binaryString, $filename, $contentType, $inline);
   }
 
   /**
@@ -584,7 +634,7 @@ abstract class HttpHelper
       'type' => $contentType,
       'size' => $responseSize,
       'body' => $isJson ? json_decode($response) : $response,
-      'json' => $isJson
+      'json' => $isJson,
     );
     curl_close($curl);
     return $response;
