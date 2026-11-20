@@ -609,7 +609,7 @@ class GdUtils
    * @param string $imagemStr Imagem em string binaria.
    * @param bool $base64URI Retorna a foto em formato URI base64.
    * @param int $tolerancia Se livra tambem de cores proximas ao branco. Quanto maior, mais se distancia do branco.
-   * @param int $limitePixels Maximo de pixels permitidos na imagem pra evitar alto consumo de RAM. Default: 16777216 (4096x4096) (64MB).
+   * @param int $limitePixels Maximo de pixels permitidos na imagem pra evitar alto consumo de RAM. Default: 16777216 (4096x4096) (16MB).
    * @return string Imagem em string.
    * @throws Exception
    */
