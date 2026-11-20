@@ -103,14 +103,15 @@ class Utils
    * ```
    * @param callable $callback - Função callback que pode lançar exceções.
    * @param string|null $msg - Mensagem de erro exibida no lugar da padrão (presente no JSON). Se não informar será usada a mensagem da Exception.
+   * @param int $httpStatus - Código HTTP da resposta.
    * @return mixed Resultado do callback.
    */
-  public static function throwErroJson(callable $callback, ?string $msg = null)
+  public static function throwErroJson(callable $callback, ?string $msg = null, int $httpStatus = 400)
   {
     try {
       return $callback();
     } catch (Exception $e) {
-      HttpHelper::erroJson(400, $msg ?: $e->getMessage());
+      HttpHelper::erroJson($httpStatus, $msg ?: $e->getMessage());
     }
   }
 }
